@@ -26,6 +26,7 @@ model Turno {
   paciente_id Int
   inicio      DateTime
   motivo      String?
+  notas       String?
   estado      String?   @default("programado")
   updated_at  DateTime  @updatedAt
   paciente    Paciente  @relation(fields: [paciente_id], references: [id])
