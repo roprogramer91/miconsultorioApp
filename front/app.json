@@ -28,7 +28,19 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "@react-native-community/datetimepicker"
-    ]
+      "@react-native-community/datetimepicker",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1a6fb5"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1c17ee64-071a-45c5-bb2a-71ddda68c12a"
+      }
+    }
   }
 }

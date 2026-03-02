@@ -298,8 +298,12 @@ export default function HomeScreen({ navigation }: any) {
               await Notifications.scheduleNotificationAsync({
                 content: {
                   title: 'Prueba Local',
-                  body: 'Al tocar esta notificación local, irás a Turnos.',
-                  data: { screen: 'Turnos' },
+                  body: proximoTurno 
+                    ? `Notificación de prueba. Te llevará al turno de ${proximoTurno.paciente?.nombres}.`
+                    : 'Al tocar esta notificación local, irás a Turnos.',
+                  data: proximoTurno 
+                    ? { screen: 'TurnoDetail', turnoId: String(proximoTurno.id) }
+                    : { screen: 'Turnos' },
                 },
                 trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 5 },
               });
