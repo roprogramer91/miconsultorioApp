@@ -46,7 +46,7 @@ function NavCard({ title, subtitle, icon, onPress, accent }: NavCardProps) {
   );
 }
 
-export default function HomeScreen({ navigation }: any) {
+export default function HomeScreen({ navigation, onLogout }: any) {
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const insets = useSafeAreaInsets();
@@ -131,13 +131,10 @@ export default function HomeScreen({ navigation }: any) {
       await GoogleSignin.signOut();
       // 2. Borrar nuestro token JWT de la memoria del teléfono
       await AsyncStorage.removeItem('userToken');
-      // 3. Forzar al navegador a ocultar el Home y volver a montar el Login.
-      // Ya que AppNavigator depende del estado reactivo de userToken,
-      // la forma más limpia es hacer un re-dispatch o reset:
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
+      // 3. Avisar al AppNavigator que borre el estado para re-renderizar la pantalla de Login
+      if (onLogout) {
+        onLogout();
+      }
     } catch (error) {
       console.error('Error signing out:', error);
     }

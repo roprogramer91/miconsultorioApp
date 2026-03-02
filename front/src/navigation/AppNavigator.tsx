@@ -66,9 +66,10 @@ export default function AppNavigator() {
         <>
           <Stack.Screen 
             name="Home" 
-            component={HomeScreen} 
             options={{ headerShown: false }} 
-          />
+          >
+            {(props) => <HomeScreen {...props} onLogout={() => setUserToken(null)} />}
+          </Stack.Screen>
           <Stack.Screen 
             name="Pacientes" 
             component={PacientesScreen} 
