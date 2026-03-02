@@ -16,6 +16,8 @@ import { colors } from '../theme/colors';
 
 import { getPacientes, PacienteFront, getTurnos, TurnoFront } from '../services/api';
 import * as Notifications from 'expo-notifications';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavCardProps = {
   title: string;
@@ -123,6 +125,24 @@ export default function HomeScreen({ navigation }: any) {
     return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
   }
 
+  const handleSignOut = async () => {
+    try {
+      // 1. Desconectar de Google nativamente
+      await GoogleSignin.signOut();
+      // 2. Borrar nuestro token JWT de la memoria del teléfono
+      await AsyncStorage.removeItem('userToken');
+      // 3. Forzar al navegador a ocultar el Home y volver a montar el Login.
+      // Ya que AppNavigator depende del estado reactivo de userToken,
+      // la forma más limpia es hacer un re-dispatch o reset:
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={colors.primary} barStyle="light-content" />
@@ -133,6 +153,9 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.headerGreeting}>Bienvenido</Text>
           <Text style={styles.headerTitle}>Consultorio</Text>
         </View>
+        <TouchableOpacity onPress={handleSignOut} style={styles.logoutButton}>
+          <Ionicons name="log-out-outline" size={28} color="rgba(255,255,255,0.9)" />
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
@@ -420,6 +443,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerBadgeText: { fontSize: 24 },
+  logoutButton: {
+    padding: 8,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+  },
 
   // Search
   searchWrapper: {
