@@ -10,7 +10,7 @@ import { colors } from '../theme/colors';
 import { getTurnos, getPacientes, getPacienteById, getTurnosByPaciente, createTurno, updateTurno, PacienteFront, TurnoFront } from '../services/api';
 
 const ESTADOS_COLOR: Record<string, string> = {
-  atendido: '#2e7d32', cancelado: '#b71c1c', programado: '#1a6fb5',
+  atendido: '#2e7d32', cancelado: '#b71c1c', programado: '#1a6fb5', ausente: '#ef6c00'
 };
 
 function formatHistFecha(iso?: string) {

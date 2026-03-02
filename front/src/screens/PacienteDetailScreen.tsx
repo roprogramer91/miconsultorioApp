@@ -23,7 +23,7 @@ export type PacienteParams = {
 
 
 const ESTADO_COLOR: Record<string, string> = {
-  atendido: '#2e7d32', cancelado: '#b71c1c', programado: '#1a6fb5',
+  atendido: '#2e7d32', cancelado: '#b71c1c', programado: '#1a6fb5', ausente: '#ef6c00'
 };
 
 type DataRowProps = { label: string; value?: string; icon: string };
@@ -87,6 +87,13 @@ function StatusModal({
                 <Text style={[styles.modalBtnText, { color: '#2e7d32' }]}>ATENDIDO</Text>
               </TouchableOpacity>
               
+              <TouchableOpacity 
+                style={styles.modalBtn} 
+                onPress={() => onChange('ausente')}
+              >
+                <Text style={[styles.modalBtnText, { color: '#ef6c00' }]}>AUSENTE</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity 
                 style={styles.modalBtn} 
                 onPress={() => onChange('cancelado')}

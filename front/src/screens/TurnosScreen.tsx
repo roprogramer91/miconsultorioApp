@@ -11,6 +11,7 @@ import { getTurnos, getPacientes, deleteTurno, updateTurno, TurnoFront, Paciente
 const ESTADOS: Record<string, { label: string; color: string; bg: string }> = {
   programado: { label: 'Programado', color: '#1a6fb5', bg: '#e3f0fb' },
   atendido:   { label: 'Atendido',   color: '#2e7d32', bg: '#e8f5e9' },
+  ausente:    { label: 'Ausente',    color: '#ef6c00', bg: '#fff3e0' },
   cancelado:  { label: 'Cancelado',  color: '#b71c1c', bg: '#fdecea' },
 };
 
@@ -66,6 +67,13 @@ function StatusModal({
               onPress={() => onChange('atendido')}
             >
               <Text style={[styles.modalBtnText, { color: '#2e7d32' }]}>ATENDIDO</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.modalBtn, { backgroundColor: '#fff3e0' }]} 
+              onPress={() => onChange('ausente')}
+            >
+              <Text style={[styles.modalBtnText, { color: '#ef6c00' }]}>AUSENTE</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -297,7 +305,7 @@ export default function TurnosScreen({ navigation }: any) {
               <TurnoCard
                 turno={item}
                 pacientes={pacientes}
-                onEdit={() => handleEdit(item)}
+                onEdit={handleEdit}
                 onStatus={() => handleStatus(item)}
                 onDelete={() => handleDelete(item)}
               />

@@ -8,6 +8,7 @@ import { getTurnos, deleteTurno, updateTurno, TurnoFront, PacienteFront, getPaci
 const ESTADOS: Record<string, { label: string; color: string; bg: string }> = {
   programado: { label: 'Programado', color: '#1a6fb5', bg: '#e3f0fb' },
   atendido:   { label: 'Atendido',   color: '#2e7d32', bg: '#e8f5e9' },
+  ausente:    { label: 'Ausente',    color: '#ef6c00', bg: '#fff3e0' },
   cancelado:  { label: 'Cancelado',  color: '#b71c1c', bg: '#fdecea' },
 };
 
@@ -188,6 +189,14 @@ export default function TurnoDetailScreen({ route, navigation }: any) {
           </TouchableOpacity>
           
           <TouchableOpacity 
+            style={[styles.actionBtn, turno.estado === 'ausente' && styles.actionBtnActive, { borderColor: '#ef6c00' }]} 
+            onPress={() => confirmarEstado('ausente')}
+          >
+            <Ionicons name="person-remove-outline" size={24} color="#ef6c00" style={{ marginBottom: 4}} />
+            <Text style={[styles.actionBtnText, { color: '#ef6c00' }]}>Ausente</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
             style={[styles.actionBtn, turno.estado === 'cancelado' && styles.actionBtnActive, { borderColor: '#d32f2f' }]} 
             onPress={() => confirmarEstado('cancelado')}
           >
@@ -246,11 +255,11 @@ const styles = StyleSheet.create({
   value: { fontSize: 16, color: '#333', lineHeight: 24 },
 
   sectionTitle: { fontSize: 15, textTransform: 'uppercase', letterSpacing: 0.5, color: '#888', fontWeight: '700', marginBottom: 12, marginLeft: 4 },
-  actionsContainer: { flexDirection: 'row', gap: 12 },
+  actionsContainer: { flexDirection: 'row', gap: 8 },
   actionBtn: {
     flex: 1, backgroundColor: '#fff', borderWidth: 2, borderRadius: 12,
-    padding: 16, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed'
+    paddingVertical: 14, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed'
   },
   actionBtnActive: { borderStyle: 'solid', backgroundColor: '#f9f9f9' },
-  actionBtnText: { fontSize: 14, fontWeight: '700', marginTop: 8 },
+  actionBtnText: { fontSize: 12, fontWeight: '700', marginTop: 8, textAlign: 'center' },
 });

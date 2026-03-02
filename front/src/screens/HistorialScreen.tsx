@@ -9,6 +9,7 @@ import { getPacientes, getTurnos, deleteTurno, updateTurno, PacienteFront, Turno
 
 const ESTADOS_CONF: Record<string, { label: string; color: string; bg: string }> = {
   atendido:  { label: 'Atendido',  color: '#2e7d32', bg: '#e8f5e9' },
+  ausente:   { label: 'Ausente',   color: '#ef6c00', bg: '#fff3e0' },
   cancelado: { label: 'Cancelado', color: '#b71c1c', bg: '#fdecea' },
   programado:{ label: 'Programado',color: '#1a6fb5', bg: '#e3f0fb' },
 };
@@ -62,6 +63,13 @@ function StatusModal({
                 <Text style={[styles.modalBtnText, { color: '#2e7d32' }]}>ATENDIDO</Text>
               </TouchableOpacity>
               
+              <TouchableOpacity 
+                style={styles.modalBtn} 
+                onPress={() => onChange('ausente')}
+              >
+                <Text style={[styles.modalBtnText, { color: '#ef6c00' }]}>AUSENTE</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity 
                 style={styles.modalBtn} 
                 onPress={() => onChange('cancelado')}
