@@ -3,14 +3,30 @@
  * Base URL apuntando al backend en Railway
  */
 
-const BASE_URL = 'https://miconsultorioapp-production.up.railway.app/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const BASE_URL = 'https://miconsultorioapp-production.up.railway.app/api'; // Replace locally if testing backend locally
 
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = await AsyncStorage.getItem('userToken');
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...headers, ...(options?.headers || {}) },
     ...options,
   });
+
   if (!res.ok) {
+    if (res.status === 401) {
+      // Opcionalmente: limpiar el token si expira para forzar re-login
+      // await AsyncStorage.removeItem('userToken');
+    }
     const err = await res.json().catch(() => ({}));
     throw new Error((err as any).error || `Error ${res.status}`);
   }
