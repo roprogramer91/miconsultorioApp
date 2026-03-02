@@ -9,19 +9,24 @@ const prisma = new PrismaClient();
 
 
 // Obtener todos los pacientes
-async function getAllPacientes() {
-    return await prisma.paciente.findMany();
+async function getAllPacientes(usuario_id) {
+    return await prisma.paciente.findMany({
+        where: { usuario_id: Number(usuario_id) }
+    });
 }
 
 // Obtener paciente por ID
-async function getPacienteById(id) {
-    return await prisma.paciente.findUnique({
-        where: { id: Number(id) }
+async function getPacienteById(id, usuario_id) {
+    return await prisma.paciente.findFirst({
+        where: { 
+            id: Number(id),
+            usuario_id: Number(usuario_id)
+        }
     });
 }
 
 // Crear nuevo paciente
-async function createPaciente(data) {
+async function createPaciente(data, usuario_id) {
   const {
     dni,
     nombres,
@@ -40,18 +45,22 @@ async function createPaciente(data) {
       fecha_nacimiento: fecha_nacimiento ? new Date(fecha_nacimiento) : null,
       telefono: telefono || null,
       email: email || null,
-      notas: notas || null
+      notas: notas || null,
+      usuario_id: Number(usuario_id)
     }
   });
 }
 
 // Actualizar paciente
-async function updatePaciente(id, data) {
-    // Note: original code only updated nombre, apellido, fecha_nacimiento, email
-    // but the model fields are nombres and apellidos. I will use the current model names.
+async function updatePaciente(id, data, usuario_id) {
     const { nombres, apellidos, fecha_nacimiento, email, telefono, notas, dni } = data;
     
-    // We only update the fields that are provided
+    // Check ownership first
+    const existing = await prisma.paciente.findFirst({
+        where: { id: Number(id), usuario_id: Number(usuario_id) }
+    });
+    if (!existing) return null;
+
     const updateData = {};
     if (nombres !== undefined) updateData.nombres = nombres;
     if (apellidos !== undefined) updateData.apellidos = apellidos;
@@ -70,7 +79,13 @@ async function updatePaciente(id, data) {
 }
 
 // Eliminar paciente
-async function deletePaciente(id) {
+async function deletePaciente(id, usuario_id) {
+    // Check ownership first
+    const existing = await prisma.paciente.findFirst({
+        where: { id: Number(id), usuario_id: Number(usuario_id) }
+    });
+    if (!existing) return null;
+
     await prisma.paciente.delete({
         where: { id: Number(id) }
     });

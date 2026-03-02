@@ -3,7 +3,8 @@ const pacientesModule = require('../modules/pacienteModule');
 // Obtener todos los pacientes
 exports.getAllPacientes = async (req, res) => {
     try {
-        const pacientes = await pacientesModule.getAllPacientes();
+        const usuario_id = req.usuario.id;
+        const pacientes = await pacientesModule.getAllPacientes(usuario_id);
         res.status(200).json(pacientes);
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener pacientes' });
@@ -13,9 +14,10 @@ exports.getAllPacientes = async (req, res) => {
 // Obtener un paciente por ID
 exports.getPacienteById = async (req, res) => {
     try {
-        const paciente = await pacientesModule.getPacienteById(req.params.id);
+        const usuario_id = req.usuario.id;
+        const paciente = await pacientesModule.getPacienteById(req.params.id, usuario_id);
         if (!paciente) {
-            return res.status(404).json({ error: 'Paciente no encontrado' });
+            return res.status(404).json({ error: 'Paciente no encontrado o no autorizado' });
         }
         res.status(200).json(paciente);
     } catch (error) {
@@ -26,7 +28,8 @@ exports.getPacienteById = async (req, res) => {
 // Crear un nuevo paciente
 exports.createPaciente = async (req, res) => {
     try {
-        const nuevoPaciente = await pacientesModule.createPaciente(req.body);
+        const usuario_id = req.usuario.id;
+        const nuevoPaciente = await pacientesModule.createPaciente(req.body, usuario_id);
         res.status(201).json(nuevoPaciente);
     } catch (error) {
         console.error('Error en createPaciente:', error);
@@ -37,9 +40,10 @@ exports.createPaciente = async (req, res) => {
 // Actualizar un paciente existente
 exports.updatePaciente = async (req, res) => {
     try {
-        const pacienteActualizado = await pacientesModule.updatePaciente(req.params.id, req.body);
+        const usuario_id = req.usuario.id;
+        const pacienteActualizado = await pacientesModule.updatePaciente(req.params.id, req.body, usuario_id);
         if (!pacienteActualizado) {
-            return res.status(404).json({ error: 'Paciente no encontrado' });
+            return res.status(404).json({ error: 'Paciente no encontrado o no autorizado' });
         }
         res.status(200).json(pacienteActualizado);
     } catch (error) {
@@ -50,9 +54,10 @@ exports.updatePaciente = async (req, res) => {
 // Eliminar un paciente
 exports.deletePaciente = async (req, res) => {
     try {
-        const eliminado = await pacientesModule.deletePaciente(req.params.id);
+        const usuario_id = req.usuario.id;
+        const eliminado = await pacientesModule.deletePaciente(req.params.id, usuario_id);
         if (!eliminado) {
-            return res.status(404).json({ error: 'Paciente no encontrado' });
+            return res.status(404).json({ error: 'Paciente no encontrado o no autorizado' });
         }
         res.status(200).json({ mensaje: 'Paciente eliminado correctamente' });
     } catch (error) {

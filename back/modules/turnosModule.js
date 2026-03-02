@@ -9,33 +9,64 @@ function toInicio({ inicio, fecha, hora }) {
 }
 
 // Obtener todos los turnos
-async function getAllTurnos() {
+async function getAllTurnos(usuario_id) {
   return await prisma.turno.findMany({
-    orderBy: { inicio: 'desc' }
+    where: {
+      paciente: {
+        usuario_id: Number(usuario_id)
+      }
+    },
+    orderBy: { inicio: 'desc' },
+    include: {
+      paciente: true
+    }
   });
 }
 
 // Obtener turno por ID
-async function getTurnoById(id) {
-  return await prisma.turno.findUnique({
-    where: { id: Number(id) }
+async function getTurnoById(id, usuario_id) {
+  return await prisma.turno.findFirst({
+    where: { 
+      id: Number(id),
+      paciente: {
+        usuario_id: Number(usuario_id)
+      }
+    },
+    include: {
+      paciente: true
+    }
   });
 }
 
 // Obtener turnos por paciente
-async function getTurnosByPacienteId(pacienteId) {
+async function getTurnosByPacienteId(pacienteId, usuario_id) {
+  // First verify patient belongs to user
+  const paciente = await prisma.paciente.findFirst({
+    where: { id: Number(pacienteId), usuario_id: Number(usuario_id) }
+  });
+  if (!paciente) return []; // Return empty if not authorized
+
   return await prisma.turno.findMany({
     where: { paciente_id: Number(pacienteId) },
-    orderBy: { inicio: 'desc' }
+    orderBy: { inicio: 'desc' },
+    include: {
+      paciente: true
+    }
   });
 }
 
 // Crear un nuevo turno
-async function createTurno(turnoData) {
+async function createTurno(turnoData, usuario_id) {
   const inicio = toInicio(turnoData);
   const { paciente_id, pacienteId, motivo, estado } = turnoData;
   const pid = paciente_id ?? pacienteId; // acepto ambos nombres por compat
   if (!pid) throw new Error('paciente_id es requerido');
+
+  // Validate patient belongs to this user
+  const paciente = await prisma.paciente.findFirst({
+    where: { id: Number(pid), usuario_id: Number(usuario_id) }
+  });
+  if (!paciente) throw new Error('Paciente no encontrado o no autorizado');
 
   return await prisma.turno.create({
     data: {
@@ -48,7 +79,16 @@ async function createTurno(turnoData) {
 }
 
 // Actualizar un turno existente (parcial)
-async function updateTurno(id, turnoData) {
+async function updateTurno(id, turnoData, usuario_id) {
+  // Verify ownership via patient relation
+  const existingTurno = await prisma.turno.findFirst({
+    where: { 
+      id: Number(id),
+      paciente: { usuario_id: Number(usuario_id) }
+    }
+  });
+  if (!existingTurno) return null;
+
   // Permito actualizar inicio (vía inicio o fecha+hora), motivo y estado
   const updateData = {};
   
@@ -66,7 +106,16 @@ async function updateTurno(id, turnoData) {
 }
 
 // Eliminar un turno
-async function deleteTurno(id) {
+async function deleteTurno(id, usuario_id) {
+  // Verify ownership via patient relation
+  const existingTurno = await prisma.turno.findFirst({
+    where: { 
+      id: Number(id),
+      paciente: { usuario_id: Number(usuario_id) }
+    }
+  });
+  if (!existingTurno) return null;
+
   await prisma.turno.delete({
     where: { id: Number(id) }
   });
