@@ -5,7 +5,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'https://miconsultorioapp-production.up.railway.app/api'; // Replace locally if testing backend locally
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://miconsultorioapp-production.up.railway.app/api';
 
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = await AsyncStorage.getItem('userToken');
