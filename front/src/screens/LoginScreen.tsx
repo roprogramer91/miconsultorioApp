@@ -10,17 +10,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Configure Google Sign-in
 // You will need to replace WEB_CLIENT_ID with your actual OAuth 2.0 Web Client ID from Google Cloud Console
 GoogleSignin.configure({
-  webClientId: '274672585034-1a460abl0fq80ok04l08eg1k1tllea2t.apps.googleusercontent.com', 
+  webClientId: '274672585034-hs6h77joqv9b20tu2mbk3ri0c88carn0.apps.googleusercontent.com', 
   offlineAccess: true,
 });
 
-export default function LoginScreen({ navigation, route }: any) {
+export default function LoginScreen({ navigation, route, onSignIn }: any) {
   const insets = useSafeAreaInsets();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
-  // El método de callback que AppNavigator nos pasa para actualizar el estado global si es necesario, 
-  // o AppNavigator puede simplemente escuchar cambios en AsyncStorage.
-  const handleLoginSuccess = route.params?.onSignIn; 
+  // El método de callback que AppNavigator nos pasa como prop para actualizar el estado global
+  const handleLoginSuccess = onSignIn; 
 
   const signIn = async () => {
     try {

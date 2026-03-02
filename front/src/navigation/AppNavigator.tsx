@@ -58,12 +58,9 @@ export default function AppNavigator() {
     >
       {userToken == null ? (
         // No token found, user isn't signed in
-        <Stack.Screen 
-          name="Login" 
-          component={LoginScreen} 
-          options={{ headerShown: false }}
-          initialParams={{ onSignIn: (token: string) => setUserToken(token) }}
-        />
+        <Stack.Screen name="Login" options={{ headerShown: false }}>
+          {(props) => <LoginScreen {...props} onSignIn={setUserToken} />}
+        </Stack.Screen>
       ) : (
         // User is signed in
         <>
