@@ -19,17 +19,21 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   const [isLoading, setIsLoading] = useState(true);
   const [userToken, setUserToken] = useState<string | null>(null);
+  const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
     // Check for token when app starts
     const bootstrapAsync = async () => {
       let token;
+      let userStr;
       try {
         token = await AsyncStorage.getItem('userToken');
+        userStr = await AsyncStorage.getItem('userData');
       } catch (e) {
         // Restoring token failed
       }
       setUserToken(token || null);
+      setUserData(userStr ? JSON.parse(userStr) : null);
       setIsLoading(false);
     };
 
@@ -59,7 +63,10 @@ export default function AppNavigator() {
       {userToken == null ? (
         // No token found, user isn't signed in
         <Stack.Screen name="Login" options={{ headerShown: false }}>
-          {(props) => <LoginScreen {...props} onSignIn={setUserToken} />}
+          {(props) => <LoginScreen {...props} onSignIn={(token: string, user: any) => {
+            setUserToken(token);
+            setUserData(user);
+          }} />}
         </Stack.Screen>
       ) : (
         // User is signed in
@@ -68,7 +75,10 @@ export default function AppNavigator() {
             name="Home" 
             options={{ headerShown: false }} 
           >
-            {(props) => <HomeScreen {...props} onLogout={() => setUserToken(null)} />}
+            {(props) => <HomeScreen {...props} userName={userData?.nombres || 'Doctor'} onLogout={() => {
+              setUserToken(null);
+              setUserData(null);
+            }} />}
           </Stack.Screen>
           <Stack.Screen 
             name="Pacientes" 

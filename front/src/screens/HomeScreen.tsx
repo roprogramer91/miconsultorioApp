@@ -46,7 +46,7 @@ function NavCard({ title, subtitle, icon, onPress, accent }: NavCardProps) {
   );
 }
 
-export default function HomeScreen({ navigation, onLogout }: any) {
+export default function HomeScreen({ navigation, onLogout, userName }: any) {
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const insets = useSafeAreaInsets();
@@ -131,6 +131,7 @@ export default function HomeScreen({ navigation, onLogout }: any) {
       await GoogleSignin.signOut();
       // 2. Borrar nuestro token JWT de la memoria del teléfono
       await AsyncStorage.removeItem('userToken');
+      await AsyncStorage.removeItem('userData');
       // 3. Avisar al AppNavigator que borre el estado para re-renderizar la pantalla de Login
       if (onLogout) {
         onLogout();
@@ -148,7 +149,7 @@ export default function HomeScreen({ navigation, onLogout }: any) {
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View>
           <Text style={styles.headerGreeting}>Bienvenido</Text>
-          <Text style={styles.headerTitle}>Consultorio</Text>
+          <Text style={styles.headerTitle}>{userName}</Text>
         </View>
         <TouchableOpacity onPress={handleSignOut} style={styles.logoutButton}>
           <Ionicons name="log-out-outline" size={28} color="rgba(255,255,255,0.9)" />

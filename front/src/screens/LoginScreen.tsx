@@ -41,13 +41,14 @@ export default function LoginScreen({ navigation, route, onSignIn }: any) {
         body: JSON.stringify({ idToken }),
       });
 
-      // 3. Guardar el JWT (token interno) en AsyncStorage
+      // 3. Guardar el JWT (token interno) y datos del usuario en AsyncStorage
       if (response && response.token) {
         await AsyncStorage.setItem('userToken', response.token);
+        await AsyncStorage.setItem('userData', JSON.stringify(response.usuario));
         
         // 4. Avisarle al Navigator que ya estamos logueados
         if (handleLoginSuccess) {
-          handleLoginSuccess(response.token);
+          handleLoginSuccess(response.token, response.usuario);
         }
       }
 
