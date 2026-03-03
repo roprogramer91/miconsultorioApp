@@ -312,28 +312,6 @@ export default function HomeScreen({ navigation, onLogout, userName }: any) {
             </Text>
           </View>
 
-          {/* Test de Notificación Local */}
-          <TouchableOpacity 
-            style={styles.utilCard}
-            onPress={async () => {
-              await Notifications.scheduleNotificationAsync({
-                content: {
-                  title: 'Prueba Local',
-                  body: proximoTurno 
-                    ? `Notificación de prueba. Te llevará al turno de ${proximoTurno.paciente?.nombres}.`
-                    : 'Al tocar esta notificación local, irás a Turnos.',
-                  data: proximoTurno 
-                    ? { screen: 'TurnoDetail', turnoId: String(proximoTurno.id) }
-                    : { screen: 'Turnos' },
-                },
-                trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 5 },
-              });
-              alert('Notificación programada para dentro de 5 segundos. Sal a la pantalla de inicio (pon la app en background) para verla aparecer y presionar sobre ella.');
-            }}
-          >
-            <Ionicons name="notifications-outline" size={28} color={colors.primary} style={{ marginBottom: 4 }} />
-            <Text style={styles.utilLabel}>Test Notificación{'\n'}(En 5 seg)</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.utilRow}>
