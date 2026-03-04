@@ -7,6 +7,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ----------------------------------------------------------------------------
+// DOCTOR (OWNER)
+// ----------------------------------------------------------------------------
+model Usuario {
+  id                         Int       @id @default(autoincrement())
+  email                      String    @unique
+  nombres                    String
+  apellidos                  String
+  picture                    String?
+  createdAt                  DateTime  @default(now())
+  
+  // Perfil Público / SaaS
+  slug                       String?   @unique
+  estado                     String    @default("ACTIVO") // ACTIVO, INACTIVO, PENDIENTE_PAGO
+  specialty                  String?
+  bio                        String?
+  address                    String?
+  timezone                   String    @default("America/Argentina/Buenos_Aires")
+  price                      Decimal?  @default(0) @db.Decimal(10, 2)
+  depositPercent             Decimal?  @default(50) @db.Decimal(5, 2)
+  appointmentDurationMinutes Int       @default(30)
+
+  pacientes                  Paciente[]
+  turnos                     Turno[]
+  availabilityRules          AvailabilityRule[]
+  availabilityExceptions     AvailabilityException[]
+  payments                   Payment[]
+  accessTokens               PatientAccessToken[]
+  pushTokens                 PushToken[]
+  
+  @@map("usuarios")
+}
+
+// ----------------------------------------------------------------------------
+// PACIENTE (Ligado a un Doctor)
+// ----------------------------------------------------------------------------
 model Paciente {
   id               Int       @id @default(autoincrement())
   dni              String?
@@ -16,42 +52,162 @@ model Paciente {
   telefono         String?
   email            String?
   notas            String?
-  usuario_id       Int?
-  usuario          Usuario?  @relation(fields: [usuario_id], references: [id])
+  
+  usuario_id       Int
+  usuario          Usuario   @relation(fields: [usuario_id], references: [id])
+  
   turnos           Turno[]
+  accessTokens     PatientAccessToken[]
+  pushTokens       PushToken[]
 
   @@map("pacientes")
 }
 
+// ----------------------------------------------------------------------------
+// TURNO Y ESTADOS
+// ----------------------------------------------------------------------------
+enum TurnoStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED_BY_PATIENT
+  CANCELLED_BY_DOCTOR
+  EXPIRED
+  NO_SHOW
+  ATTENDED
+}
+
+enum TurnoSource {
+  WEB
+  APP_DOCTOR
+  MANUAL
+}
+
+enum CancelledBy {
+  PATIENT
+  DOCTOR
+  SYSTEM
+}
+
 model Turno {
-  id          Int      @id @default(autoincrement())
-  paciente_id Int
-  inicio      DateTime
-  motivo      String?
-  notas       String?
-  estado      String?  @default("programado")
-  updated_at  DateTime @updatedAt
-  paciente    Paciente @relation(fields: [paciente_id], references: [id])
+  id              Int          @id @default(autoincrement())
+  usuario_id      Int          // Doctor
+  paciente_id     Int
+  inicio          DateTime
+  fin             DateTime
+  motivo          String?
+  notas           String?
+  estado          TurnoStatus  @default(PENDING_PAYMENT)
+  source          TurnoSource  @default(WEB)
+  
+  cancelledAt     DateTime?
+  cancelledBy     CancelledBy?
+  
+  expiresAt       DateTime?    // Null si es creado manual, timestamp si es reserva web
+  createdAt       DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  paciente        Paciente     @relation(fields: [paciente_id], references: [id])
+  usuario         Usuario      @relation(fields: [usuario_id], references: [id])
+  payment         Payment?
 
   @@map("turnos")
 }
 
-model PushToken {
-  id        Int      @id @default(autoincrement())
-  token     String   @unique
-  createdAt DateTime @default(now())
+// ----------------------------------------------------------------------------
+// DISPONIBILIDAD
+// ----------------------------------------------------------------------------
+model AvailabilityRule {
+  id         Int      @id @default(autoincrement())
+  usuario_id Int
+  dayOfWeek  Int      // 0=Dom, 1=Lun ...
+  startTime  String   // "09:00"
+  endTime    String   // "13:00"
+  
+  usuario    Usuario  @relation(fields: [usuario_id], references: [id])
 
-  @@map("push_tokens")
+  @@map("availability_rules")
 }
 
-model Usuario {
-  id        Int        @id @default(autoincrement())
-  email     String     @unique
-  nombres   String
-  apellidos String
-  picture   String?
-  createdAt DateTime   @default(now())
-  pacientes Paciente[]
+enum ExceptionType {
+  BLOCK
+  EXTRA
+}
 
-  @@map("usuarios")
+model AvailabilityException {
+  id         Int           @id @default(autoincrement())
+  usuario_id Int
+  date       DateTime      @db.Date
+  startTime  String?       // Null = día completo
+  endTime    String?
+  type       ExceptionType @default(BLOCK)
+
+  usuario    Usuario       @relation(fields: [usuario_id], references: [id])
+
+  @@map("availability_exceptions")
+}
+
+// ----------------------------------------------------------------------------
+// PAGOS
+// ----------------------------------------------------------------------------
+enum PaymentProvider {
+  MERCADOPAGO
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Payment {
+  id                 Int             @id @default(autoincrement())
+  turno_id           Int             @unique
+  usuario_id         Int             // Doctor
+  provider           PaymentProvider @default(MERCADOPAGO)
+  providerPaymentId  String?
+  amount             Decimal         @db.Decimal(10, 2)
+  status             PaymentStatus   @default(PENDING)
+  preferenceId       String?
+  
+  createdAt          DateTime        @default(now())
+  paidAt             DateTime?
+
+  turno              Turno           @relation(fields: [turno_id], references: [id], onDelete: Cascade)
+  usuario            Usuario         @relation(fields: [usuario_id], references: [id])
+
+  @@map("payments")
+}
+
+// ----------------------------------------------------------------------------
+// MAGIC LINKS
+// ----------------------------------------------------------------------------
+model PatientAccessToken {
+  id          Int      @id @default(autoincrement())
+  usuario_id  Int      // Doctor (refuerza aislamiento)
+  paciente_id Int
+  token       String   @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+
+  paciente    Paciente @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
+  usuario     Usuario  @relation(fields: [usuario_id], references: [id])
+
+  @@map("patient_access_tokens")
+}
+
+// ----------------------------------------------------------------------------
+// PUSH TOKENS
+// ----------------------------------------------------------------------------
+model PushToken {
+  id          Int      @id @default(autoincrement())
+  token       String   @unique
+  createdAt   DateTime @default(now())
+  
+  usuario_id  Int?      // Token del Doctor (App o Web Push)
+  paciente_id Int?      // Token del Paciente (App)
+  
+  usuario     Usuario?  @relation(fields: [usuario_id], references: [id])
+  paciente    Paciente? @relation(fields: [paciente_id], references: [id])
+
+  @@map("push_tokens")
 }

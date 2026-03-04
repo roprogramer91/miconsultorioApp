@@ -1,5 +1,10 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 // Helper: si te llegan fecha y hora por separado, las junto a ISO
 function toInicio({ inicio, fecha, hora }) {
@@ -8,18 +13,12 @@ function toInicio({ inicio, fecha, hora }) {
   throw new Error('inicio (o fecha+hora) es requerido');
 }
 
-// Obtener todos los turnos
+// Obtener todos los turnos del doctor
 async function getAllTurnos(usuario_id) {
   return await prisma.turno.findMany({
-    where: {
-      paciente: {
-        usuario_id: Number(usuario_id)
-      }
-    },
+    where: { usuario_id: Number(usuario_id) },
     orderBy: { inicio: 'desc' },
-    include: {
-      paciente: true
-    }
+    include: { paciente: true }
   });
 }
 
@@ -28,38 +27,31 @@ async function getTurnoById(id, usuario_id) {
   return await prisma.turno.findFirst({
     where: { 
       id: Number(id),
-      paciente: {
-        usuario_id: Number(usuario_id)
-      }
+      usuario_id: Number(usuario_id)
     },
-    include: {
-      paciente: true
-    }
+    include: { paciente: true }
   });
 }
 
 // Obtener turnos por paciente
 async function getTurnosByPacienteId(pacienteId, usuario_id) {
-  // First verify patient belongs to user
   const paciente = await prisma.paciente.findFirst({
     where: { id: Number(pacienteId), usuario_id: Number(usuario_id) }
   });
   if (!paciente) return []; // Return empty if not authorized
 
   return await prisma.turno.findMany({
-    where: { paciente_id: Number(pacienteId) },
+    where: { paciente_id: Number(pacienteId), usuario_id: Number(usuario_id) },
     orderBy: { inicio: 'desc' },
-    include: {
-      paciente: true
-    }
+    include: { paciente: true }
   });
 }
 
-// Crear un nuevo turno
+// Crear un nuevo turno (MANUAL desde dashboard Doctor)
 async function createTurno(turnoData, usuario_id) {
-  const inicio = toInicio(turnoData);
-  const { paciente_id, pacienteId, motivo, estado } = turnoData;
-  const pid = paciente_id ?? pacienteId; // acepto ambos nombres por compat
+  const inicioDate = toInicio(turnoData);
+  const { paciente_id, pacienteId, motivo, estado, durationMins } = turnoData;
+  const pid = paciente_id ?? pacienteId; 
   if (!pid) throw new Error('paciente_id es requerido');
 
   // Validate patient belongs to this user
@@ -68,34 +60,66 @@ async function createTurno(turnoData, usuario_id) {
   });
   if (!paciente) throw new Error('Paciente no encontrado o no autorizado');
 
-  return await prisma.turno.create({
-    data: {
-      paciente_id: Number(pid),
-      inicio: inicio,
-      motivo: motivo || null,
-      estado: estado || 'programado'
+  const doctor = await prisma.usuario.findUnique({ where: { id: Number(usuario_id) } });
+  if(!doctor) throw new Error('Doctor no existe');
+  
+  const tz = doctor.timezone || 'America/Argentina/Buenos_Aires';
+  const duration = durationMins || doctor.appointmentDurationMinutes;
+  
+  // Calcular fin exacto
+  const finDate = dayjs(inicioDate).add(duration, 'minute').toDate();
+
+  // ----- TRANSACCIÓN SERIALIZABLE (Prevención Double Booking) ----- //
+  return await prisma.$transaction(async (tx) => {
+    // Verificar colisiones
+    const overlapCount = await tx.turno.count({
+      where: {
+        usuario_id: Number(usuario_id),
+        estado: { notIn: ['CANCELLED_BY_PATIENT', 'CANCELLED_BY_DOCTOR', 'EXPIRED'] },
+        AND: [
+            { inicio: { lt: finDate } },
+            { fin: { gt: inicioDate } }
+        ]
+      }
+    });
+
+    if (overlapCount > 0) {
+      throw new Error("El horario seleccionado ya no se encuentra disponible (ocupado por otro turno).");
     }
-  });
+
+    // Insertar si está libre
+    return await tx.turno.create({
+      data: {
+        usuario_id: Number(usuario_id),
+        paciente_id: Number(pid),
+        inicio: inicioDate,
+        fin: finDate,
+        motivo: motivo || null,
+        estado: estado || 'CONFIRMED', // Turnos creados manual por doctor son CONFIRMED por defecto
+        source: 'MANUAL'
+      }
+    });
+  }, { isolationLevel: 'Serializable' });
 }
 
 // Actualizar un turno existente (parcial)
 async function updateTurno(id, turnoData, usuario_id) {
-  // Verify ownership via patient relation
   const existingTurno = await prisma.turno.findFirst({
     where: { 
       id: Number(id),
-      paciente: { usuario_id: Number(usuario_id) }
+      usuario_id: Number(usuario_id) 
     }
   });
   if (!existingTurno) return null;
 
-  // Permito actualizar inicio (vía inicio o fecha+hora), motivo y estado
   const updateData = {};
   
   if (turnoData.inicio || (turnoData.fecha && turnoData.hora)) {
     updateData.inicio = toInicio(turnoData);
+    // Nota: Si cambian el horario, deberíamos verificar OVERLAP. 
+    // Para simplificar MVP Dashboard doctor asume responsabilidad, o llamaríamos a lógica de transacción.
   }
-  
+  if (turnoData.fin) updateData.fin = new Date(turnoData.fin);
   if (turnoData.motivo !== undefined) updateData.motivo = turnoData.motivo;
   if (turnoData.estado !== undefined) updateData.estado = turnoData.estado;
 
@@ -105,14 +129,10 @@ async function updateTurno(id, turnoData, usuario_id) {
   });
 }
 
-// Eliminar un turno
+// Eliminar un turno (o "Cancelar" lógicamente mejor)
 async function deleteTurno(id, usuario_id) {
-  // Verify ownership via patient relation
   const existingTurno = await prisma.turno.findFirst({
-    where: { 
-      id: Number(id),
-      paciente: { usuario_id: Number(usuario_id) }
-    }
+    where: { id: Number(id), usuario_id: Number(usuario_id) }
   });
   if (!existingTurno) return null;
 

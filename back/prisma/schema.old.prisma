@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Paciente {
+  id               Int       @id @default(autoincrement())
+  dni              String?
+  nombres          String
+  apellidos        String
+  fecha_nacimiento DateTime?
+  telefono         String?
+  email            String?
+  notas            String?
+  usuario_id       Int?
+  usuario          Usuario?  @relation(fields: [usuario_id], references: [id])
+  turnos           Turno[]
+
+  @@map("pacientes")
+}
+
+model Turno {
+  id          Int      @id @default(autoincrement())
+  paciente_id Int
+  inicio      DateTime
+  motivo      String?
+  notas       String?
+  estado      String?  @default("programado")
+  updated_at  DateTime @updatedAt
+  paciente    Paciente @relation(fields: [paciente_id], references: [id])
+
+  @@map("turnos")
+}
+
+model PushToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("push_tokens")
+}
+
+model Usuario {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  nombres   String
+  apellidos String
+  picture   String?
+  createdAt DateTime   @default(now())
+  pacientes Paciente[]
+
+  @@map("usuarios")
+}
