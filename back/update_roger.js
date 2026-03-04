@@ -7,10 +7,7 @@ async function update() {
     console.log("Conectado a DB");
     const roger = await prisma.usuario.findFirst({
       where: {
-        OR: [
-          { nombres: { contains: 'Roger', mode: 'insensitive' } },
-          { apellidos: { contains: 'Ramirez', mode: 'insensitive' } }
-        ]
+        slug: 'RogerRamirez'
       }
     });
     
@@ -22,10 +19,24 @@ async function update() {
           estado: 'ACTIVO',
           price: 20000,
           specialty: 'Medicina General',
-          address: 'Clinica Miconsultorio, 2do Piso'
+          address: 'Clinica Miconsultorio, 2do Piso',
+          landingConfig: {
+            upsert: {
+              create: {
+                primaryColor: '#00B4D8',
+                backgroundColor: '#F8FBFF',
+                textColor: '#1F2937',
+                heroTitle: 'Cuidamos tu salud en tiempos difíciles',
+                heroSubtitle: 'Atención personalizada y segura con el Dr. Ramirez.'
+              },
+              update: {
+                primaryColor: '#00B4D8'
+              }
+            }
+          }
         }
       });
-      console.log('Usuario Roger Ramirez actualizado a ACTIVO con slug: RogerRamirez');
+      console.log('Usuario Roger Ramirez actualizado con LandingConfig');
     } else {
       console.log('No se encontro usuario Roger Ramirez');
     }

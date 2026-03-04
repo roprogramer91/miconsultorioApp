@@ -25,7 +25,8 @@ exports.getDoctorProfile = async (req, res) => {
         depositPercent: true,
         appointmentDurationMinutes: true,
         timezone: true,
-        estado: true
+        estado: true,
+        landingConfig: true
       }
     });
 
