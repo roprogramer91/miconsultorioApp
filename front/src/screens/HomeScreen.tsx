@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 
-import { getPacientes, PacienteFront, getTurnos, TurnoFront } from '../services/api';
+import { getPacientes, PacienteFront, getTurnos, TurnoFront, getDashboardMetrics, DashboardMetrics } from '../services/api';
 import * as Notifications from 'expo-notifications';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -46,12 +46,26 @@ function NavCard({ title, subtitle, icon, onPress, accent }: NavCardProps) {
   );
 }
 
+// Subcomponente de Tarjeta de Métrica (Fase 6)
+function MetricCard({ title, value, icon, color }: { title: string, value: string, icon: any, color: string }) {
+  return (
+    <View style={styles.metricCard}>
+      <View style={[styles.metricIconBg, { backgroundColor: color + '15' }]}>
+        <Ionicons name={icon} size={24} color={color} />
+      </View>
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricTitle}>{title}</Text>
+    </View>
+  );
+}
+
 export default function HomeScreen({ navigation, onLogout, userName }: any) {
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const insets = useSafeAreaInsets();
   const [pacientes, setPacientes] = useState<PacienteFront[]>([]);
   const [proximoTurno, setProximoTurno] = useState<TurnoFront | null>(null);
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(false);
   const [now, setNow] = useState(new Date());
   const [fabMenuVisible, setFabMenuVisible] = useState(false);
@@ -64,16 +78,18 @@ export default function HomeScreen({ navigation, onLogout, userName }: any) {
   React.useEffect(() => {
     const unsub = navigation.addListener('focus', () => {
       setLoading(true);
-      Promise.all([getPacientes(), getTurnos()])
-        .then(([pacientesData, turnosData]) => {
+      Promise.all([getPacientes(), getTurnos(), getDashboardMetrics().catch(() => null)])
+        .then(([pacientesData, turnosData, metricsData]) => {
           pacientesData.sort((a, b) => b.id - a.id);
           setPacientes(pacientesData);
+          if (metricsData) setMetrics(metricsData);
 
           const nowTime = new Date().getTime();
-          const futuros = turnosData.filter(t => t.estado === 'programado' && t.inicio && new Date(t.inicio).getTime() >= nowTime - 15 * 60000);
+          const futuros = turnosData.filter(t => t.estado === 'programado' || t.estado === 'CONFIRMED' || t.estado === 'PENDING_PAYMENT');
+          const validos = futuros.filter(t => t.inicio && new Date(t.inicio).getTime() >= nowTime - 15 * 60000);
           
           // Map patient info from `pacientesData` to ensure we have it locally just in case
-          futuros.forEach(t => {
+          validos.forEach(t => {
             if (!t.paciente) {
               const found = pacientesData.find(p => p.id === t.paciente_id);
               if (found) {
@@ -82,10 +98,10 @@ export default function HomeScreen({ navigation, onLogout, userName }: any) {
             }
           });
 
-          futuros.sort((a, b) => new Date(a.inicio || '').getTime() - new Date(b.inicio || '').getTime());
+          validos.sort((a, b) => new Date(a.inicio || '').getTime() - new Date(b.inicio || '').getTime());
           
-          if (futuros.length > 0) {
-            setProximoTurno(futuros[0]);
+          if (validos.length > 0) {
+            setProximoTurno(validos[0]);
           } else {
             setProximoTurno(null);
           }
@@ -256,6 +272,33 @@ export default function HomeScreen({ navigation, onLogout, userName }: any) {
           </View>
         )}
 
+        {/* --- MÉTRICAS DEL SAAS --- */}
+        {metrics && (
+           <View style={{ marginBottom: 12 }}>
+             <Text style={styles.sectionLabel}>Métricas Mensuales ({metrics.mesActual})</Text>
+             <View style={styles.metricsGrid}>
+                <MetricCard 
+                    title="Atendidos" 
+                    value={metrics.turnosConfirmados.toString()} 
+                    icon="people-circle" 
+                    color="#20c997" 
+                />
+                <MetricCard 
+                    title="Cancelados" 
+                    value={metrics.turnosCancelados.toString()} 
+                    icon="close-circle" 
+                    color="#ff4d4f" 
+                />
+                 <MetricCard 
+                    title="Señas (MP)" 
+                    value={`$${metrics.ingresosSenaDepositados}`} 
+                    icon="cash" 
+                    color="#1890ff" 
+                />
+             </View>
+           </View>
+        )}
+
         <Text style={styles.sectionLabel}>Gestión del Consultorio</Text>
 
         <NavCard
@@ -271,6 +314,13 @@ export default function HomeScreen({ navigation, onLogout, userName }: any) {
           subtitle="Ver y programar citas médicas"
           icon="calendar"
           onPress={() => navigation.navigate('Turnos')}
+        />
+        
+        <NavCard
+          title="Horarios de Atención"
+          subtitle="Configurar días, horas y excepciones"
+          icon="time"
+          onPress={() => navigation.navigate('Availability')}
         />
 
         <Text style={styles.sectionLabel}>Acciones Rápidas</Text>
@@ -563,6 +613,46 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     color: '#121212',
+  },
+
+  // Métricas SaaS Grid
+  metricsGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  metricIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  metricValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#333',
+    marginBottom: 2,
+  },
+  metricTitle: {
+    fontSize: 12,
+    color: '#888',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 
   card: {

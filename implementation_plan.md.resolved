@@ -1,0 +1,308 @@
+# Plan Técnico Básico: SaaS Autogestión (MVP)
+
+## 1. Prisma Schema Actualizado
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// DOCTOR (OWNER)
+// ----------------------------------------------------------------------------
+model Usuario {
+  id                         Int       @id @default(autoincrement())
+  email                      String    @unique
+  nombres                    String
+  apellidos                  String
+  picture                    String?
+  createdAt                  DateTime  @default(now())
+  
+  // Perfil Público / SaaS
+  slug                       String?   @unique
+  specialty                  String?
+  bio                        String?
+  address                    String?
+  timezone                   String    @default("America/Argentina/Buenos_Aires")
+  price                      Float?    @default(0)
+  depositPercent             Float?    @default(50)
+  appointmentDurationMinutes Int       @default(30)
+
+  pacientes                  Paciente[]
+  turnos                     Turno[]
+  availabilityRules          AvailabilityRule[]
+  availabilityExceptions     AvailabilityException[]
+  payments                   Payment[]
+  accessTokens               PatientAccessToken[]
+  
+  @@map("usuarios")
+}
+
+// ----------------------------------------------------------------------------
+// PACIENTE (Ligado a un Doctor)
+// ----------------------------------------------------------------------------
+model Paciente {
+  id               Int       @id @default(autoincrement())
+  dni              String?
+  nombres          String
+  apellidos        String
+  fecha_nacimiento DateTime?
+  telefono         String?
+  email            String?
+  notas            String?
+  
+  usuario_id       Int
+  usuario          Usuario   @relation(fields: [usuario_id], references: [id])
+  
+  turnos           Turno[]
+  accessTokens     PatientAccessToken[]
+
+  @@map("pacientes")
+}
+
+// ----------------------------------------------------------------------------
+// TURNO Y ESTADOS
+// ----------------------------------------------------------------------------
+enum TurnoStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED_BY_PATIENT
+  CANCELLED_BY_DOCTOR
+  EXPIRED
+  NO_SHOW
+  ATTENDED
+}
+
+enum TurnoSource {
+  WEB
+  APP_DOCTOR
+  MANUAL
+}
+
+enum CancelledBy {
+  PATIENT
+  DOCTOR
+  SYSTEM
+}
+
+model Turno {
+  id              Int          @id @default(autoincrement())
+  usuario_id      Int          // Doctor
+  paciente_id     Int
+  inicio          DateTime
+  fin             DateTime
+  motivo          String?
+  notas           String?
+  estado          TurnoStatus  @default(PENDING_PAYMENT)
+  source          TurnoSource  @default(WEB)
+  
+  cancelledAt     DateTime?
+  cancelledBy     CancelledBy?
+  
+  expiresAt       DateTime?    // Null si es creado manual, timestamp si es reserva web
+  createdAt       DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  paciente        Paciente     @relation(fields: [paciente_id], references: [id])
+  usuario         Usuario      @relation(fields: [usuario_id], references: [id])
+  payment         Payment?
+
+  @@map("turnos")
+}
+
+// ----------------------------------------------------------------------------
+// DISPONIBILIDAD
+// ----------------------------------------------------------------------------
+model AvailabilityRule {
+  id         Int      @id @default(autoincrement())
+  usuario_id Int
+  dayOfWeek  Int      // 0=Dom, 1=Lun ...
+  startTime  String   // "09:00"
+  endTime    String   // "13:00"
+  
+  usuario    Usuario  @relation(fields: [usuario_id], references: [id])
+
+  @@map("availability_rules")
+}
+
+enum ExceptionType {
+  BLOCK
+  EXTRA
+}
+
+model AvailabilityException {
+  id         Int           @id @default(autoincrement())
+  usuario_id Int
+  date       DateTime      @db.Date
+  startTime  String?       // Null = día completo
+  endTime    String?
+  type       ExceptionType @default(BLOCK)
+
+  usuario    Usuario       @relation(fields: [usuario_id], references: [id])
+
+  @@map("availability_exceptions")
+}
+
+// ----------------------------------------------------------------------------
+// PAGOS
+// ----------------------------------------------------------------------------
+enum PaymentProvider {
+  MERCADOPAGO
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Payment {
+  id                 Int             @id @default(autoincrement())
+  turno_id           Int             @unique
+  usuario_id         Int             // Doctor
+  provider           PaymentProvider @default(MERCADOPAGO)
+  providerPaymentId  String?
+  amount             Float
+  status             PaymentStatus   @default(PENDING)
+  preferenceId       String?
+  
+  createdAt          DateTime        @default(now())
+  paidAt             DateTime?
+
+  turno              Turno           @relation(fields: [turno_id], references: [id], onDelete: Cascade)
+  usuario            Usuario         @relation(fields: [usuario_id], references: [id])
+
+  @@map("payments")
+}
+
+// ----------------------------------------------------------------------------
+// MAGIC LINKS
+// ----------------------------------------------------------------------------
+model PatientAccessToken {
+  id          Int      @id @default(autoincrement())
+  usuario_id  Int      // Doctor (refuerza aislamiento)
+  paciente_id Int
+  token       String   @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+
+  paciente    Paciente @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
+  usuario     Usuario  @relation(fields: [usuario_id], references: [id])
+
+  @@map("patient_access_tokens")
+}
+
+model PushToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("push_tokens")
+}
+```
+
+---
+
+## 2. Plan de Migración de Prisma (Riesgo Crítico)
+
+Para no perder datos actuales (App del Doctor en uso):
+
+1. **Generar Migración Vacía:**
+   `npx prisma migrate dev --name upgrade_to_saas_mvp --create-only`
+2. **Modificar el script SQL generado (Puntos clave antes de aplicar constraints):**
+   - **Limpieza de Pacientes huerfanos:** Si hay un `Paciente` con `usuario_id IS NULL`, asignarlo a un doctor por defecto o borrarlo (en dev).
+   - **Insertar Enums de TurnoStatus** en Postgres (CREATE TYPE).
+   - **Backfill `Turno.usuario_id`:**
+     ```sql
+     -- Agregar la columna NULLABLE primero si es necesario
+     ALTER TABLE turnos ADD COLUMN usuario_id INTEGER;
+     -- Rellenar con los datos del paciente
+     UPDATE turnos SET usuario_id = p.usuario_id
+     FROM pacientes p WHERE turnos.paciente_id = p.id;
+     -- Marcar NO NULL luego
+     ALTER TABLE turnos ALTER COLUMN usuario_id SET NOT NULL;
+     ```
+   - **Mapeo de Estados de Turno:**
+     ```sql
+     -- Cast from string to Enum
+     UPDATE turnos SET estado = 'CONFIRMED' WHERE estado = 'programado';
+     -- Los completados o pasados pasarlos a ATTENDED.
+     ```
+   - **Constraint Foreign Key de Turnos.usuario_id.**
+3. **Aplicar Migración:** `npx prisma migrate dev`
+
+---
+
+## 3. Endpoints
+
+### Públicos
+- `GET /api/public/doctors/:slug`: Retorna info del DOCTOR.
+- `GET /api/public/doctors/:slug/availability?from=YYYY-MM-DD&to=YYYY-MM-DD`: Retorna slots calculados.
+- `POST /api/public/doctors/:slug/reservations`
+  - *Payload*: `{ patient: { dni?, nombres, apellidos, telefono, email }, datetime: "ISO" }`
+  - *Lógica*:
+    1. Deduplicar Paciente (Buscar por DNI, si no Teléfono, si no Email asociado al Doctor).
+    2. Verificar overlap de slots. Iniciar Transacción.
+    3. Crear Turno PENDING_PAYMENT, expire = Now + 15m.
+    4. Crear Preference de MP y objeto `Payment`.
+  - *Response*: `{ turnoId, init_point_mp, expiresAt }`
+- `POST /api/webhooks/mercadopago`
+  - Verificación estricta de headers/secret. IDEMPOTENCIA (Si `Payment` ya es APPROVED, retornar 200 directo).
+- `GET /api/public/patient/turnos?token=:token`: Detalle del turno y opciones.
+- `POST /api/public/patient/turnos/:id/confirm?token=:token`
+- `POST /api/public/patient/turnos/:id/cancel?token=:token`: Cambia a `CANCELLED_BY_PATIENT`. Payment intacto (Sin refund). Libre para nuevos turnos.
+
+### Privados (Middleware auth)
+- `GET /api/me/profile` | `PUT /api/me/profile`
+- **CRUD Reglas y Excepciones** (Filtro forzado `usuario_id`).
+- `GET /api/turnos` | `POST /api/turnos/manual` (Crean el turno `CONFIRMED` ignorando MP).
+- `PATCH /api/turnos/:id/status`: Para marcar `ATTENDED` o `NO_SHOW`.
+- `GET /api/payments` y `GET /api/metrics`.
+
+---
+
+## 4. Algoritmo de Slots y Race Conditions (Doble Booking)
+
+**A. Algoritmo Generador `GET /availability`:**
+1. Carga `AvailabilityRule` y `AvailabilityException` del doctor en rango.
+2. Carga `Turnos` activos (estados != CANCELLED*|EXPIRED) que choquen en rango.
+3. Genera ventanas de tiempo iterando Reglas. Suma Extras, resta Blocks.
+4. Genera slots discretos sumando `appointmentDurationMinutes`.
+5. Filtra slots que caigan dentro del `inicio`-`fin` de un `Turno` activo.
+
+**B. Prevención Doble Booking (`POST /reservations`):**
+Se utilizará una transacción de Prisma. (El check de overlap mediante queries puede fallar en alta concurrencia).
+La forma infalible en Postgres es crear un **Constraint EXCLUDE** a nivel Base de datos que impida solapamiento por `usuario_id` en rangos que no estén cancelados/expirados, usando rangos de fecha (`tsrange`). 
+*MVP alternativo sin tsrange*: Al entrar el POST, hacer un COUNT de turnos activos entre Inicio y Fin con `usuario_id = X` dentro de `$transaction`. Si es `> 0`, abortar (Error 409). 
+
+---
+
+## 5. Integración MercadoPago detallada
+
+1. SDK de mercado pago (v2, `mercadopago` npm).
+2. Se enviará `notification_url` apuntando a `/api/webhooks/mercadopago` (debe estar pub en internet, ej vía tunnel para testear).
+3. Se agrega un `external_reference` = `Turno.id` o `Payment.id`.
+4. Webhook:
+   - Se recibe `{"action": "payment.created", "data": {"id": "123456"}}`.
+   - Se consulta la API de MP `Payment.get({ id: "123456" })`.
+   - Si `status === 'approved'`:
+     - Transacción Prisma: Buscar `Payment` por `external_reference`. Si estado es `PENDING`, cambiar a `APPROVED`.
+     - Actualizar `Turno` a `CONFIRMED`.
+     - Opcional: Generar Magic Link y enviarlo por email.
+
+---
+
+## 6. Fases MVP y Orden de Implementación
+
+| Fase | Tarea |
+|---|---|
+| **1 (Core/Migración)** | Modificar [schema.prisma](file:///e:/Programacion-E/AppPaciente/back/prisma/schema.prisma). Generar migración SQL con backfill y cast de estados. Ejecutar. Ajustar repos existentes (Auth/Pacientes). |
+| **2 (Disponibilidad)** | Endpoints de Dashboard para Config. Perfil, Reglas y Excepciones. Algoritmo de Slots. |
+| **3 (Checkout Público)** | Endpoints Públicos: Perfil Doctor, Slots. Flujo de Deduplicación y crear Turno `PENDING_PAYMENT`. |
+| **4 (Integración MP & Jobs)** | Endpoint Webhook MP. Job Expire (15min). Modificar Reminder Job (24h) para avisar al paciente. |
+| **5 (Magic Links)** | Endpoints de Acciones de Paciente (confirm / cancel). |

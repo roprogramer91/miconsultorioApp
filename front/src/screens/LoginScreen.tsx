@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator, Platform } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { request as apiRequest } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { WebGoogleLoginButton } from '../components/WebGoogleAuth';
 
 // Configure Google Sign-in
 // You will need to replace WEB_CLIENT_ID with your actual OAuth 2.0 Web Client ID from Google Cloud Console
@@ -79,21 +80,50 @@ export default function LoginScreen({ navigation, route, onSignIn }: any) {
       </View>
 
       <View style={styles.bottomSection}>
-        <TouchableOpacity 
-          style={styles.googleButton} 
-          onPress={signIn}
-          disabled={isSigningIn}
-          activeOpacity={0.8}
-        >
-          {isSigningIn ? (
-            <ActivityIndicator color="#757575" />
-          ) : (
-            <>
-              <Ionicons name="logo-google" size={24} color="#DB4437" style={styles.googleIcon} />
-              <Text style={styles.googleButtonText}>Ingresar con Google</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        {Platform.OS === 'web' ? (
+          <WebGoogleLoginButton 
+             isSigningIn={isSigningIn}
+             onSuccess={async (credResponse: any) => {
+                try {
+                   setIsSigningIn(true);
+                   const idToken = credResponse.credential;
+                   if(!idToken) throw new Error("No token returned by Google GIS");
+                   
+                   const response = await apiRequest<{token: string, usuario: any}>('/auth/google', {
+                     method: 'POST', body: JSON.stringify({ idToken })
+                   });
+                   
+                   if (response && response.token) {
+                     await AsyncStorage.setItem('userToken', response.token);
+                     await AsyncStorage.setItem('userData', JSON.stringify(response.usuario));
+                     if (handleLoginSuccess) handleLoginSuccess(response.token, response.usuario);
+                   }
+                } catch(e) {
+                   console.log('Error WebAuth:', e);
+                   Alert.alert('Error', 'Fallo la verificación Web con tu servidor.');
+                } finally {
+                   setIsSigningIn(false);
+                }
+             }}
+             onError={() => Alert.alert('Error', 'El popup de Google Identity fue cerrado o falló.')}
+          />
+        ) : (
+          <TouchableOpacity 
+            style={styles.googleButton} 
+            onPress={signIn}
+            disabled={isSigningIn}
+            activeOpacity={0.8}
+          >
+            {isSigningIn ? (
+              <ActivityIndicator color="#757575" />
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={24} color="#DB4437" style={styles.googleIcon} />
+                <Text style={styles.googleButtonText}>Ingresar con Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
         
         <Text style={styles.footerText}>
           Acceso exclusivo para profesionales médicos registrados.

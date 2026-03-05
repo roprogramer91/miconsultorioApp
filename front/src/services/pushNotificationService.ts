@@ -16,6 +16,10 @@ Notifications.setNotificationHandler({
 });
 
 export async function registerForPushNotificationsAsync() {
+  if (Platform.OS === 'web') {
+    return; // Push Notifications not fully supported on Web MVP without VAPID
+  }
+
   let token;
 
   if (Platform.OS === 'android') {

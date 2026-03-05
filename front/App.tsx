@@ -8,9 +8,19 @@ import { registerForPushNotificationsAsync } from './src/services/pushNotificati
 const prefix = Linking.createURL('/');
 
 const linking = {
-  prefixes: [prefix, 'miconsultorio://'],
+  // Maneja deep links móviles y URL webs a la vez
+  prefixes: [prefix, 'miconsultorio://', 'https://tu-dominio.com'],
   config: {
     screens: {
+      // Rutas Públicas e Iniciales
+      RootLanding: '',
+      Login: 'login',
+      SuperAdmin: 'superadmin',
+      Booking: 'booking',
+      DoctorLanding: ':slug',
+      
+      // Rutas SaaS (Requieren Auth JWT subyacente del Stack)
+      Home: 'dashboard',
       Turnos: 'turnos',
       PacienteDetail: 'paciente/:id', 
       TurnoDetail: 'turno/:id',
@@ -55,14 +65,20 @@ const linking = {
   },
 };
 
+import { GoogleOAuthWebProvider } from './src/components/WebGoogleAuth';
+
+const GOOGLE_CLIENT_ID = '274672585034-hs6h77joqv9b20tu2mbk3ri0c88carn0.apps.googleusercontent.com';
+
 export default function App() {
   useEffect(() => {
     registerForPushNotificationsAsync();
   }, []);
 
   return (
-    <NavigationContainer linking={linking}>
-      <AppNavigator />
-    </NavigationContainer>
+    <GoogleOAuthWebProvider clientId={GOOGLE_CLIENT_ID}>
+       <NavigationContainer linking={linking}>
+         <AppNavigator />
+       </NavigationContainer>
+    </GoogleOAuthWebProvider>
   );
 }

@@ -153,3 +153,74 @@ export async function updateTurno(id: number, data: Partial<{ fecha: string; hor
 export async function deleteTurno(id: number): Promise<void> {
   await request(`/turnos/${id}`, { method: 'DELETE' });
 }
+
+// ─── API Doctor (Fase 5/6) ───────────────────────────────────────────────────
+
+export type DashboardMetrics = {
+    mesActual: string;
+    turnosConfirmados: number;
+    ingresosSenaDepositados: number;
+    turnosCancelados: number;
+};
+
+export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+    return request<DashboardMetrics>('/me/metrics');
+}
+
+// ─── DISPONIBILIDAD (REGLAS Y EXCEPCIONES) ──────────────────────────────────
+export type Rule = { id: number; dayOfWeek: number; startTime: string; endTime: string; };
+export type Exception = { id: number; date: string; startTime: string | null; endTime: string | null; type: string; description: string | null; };
+
+export async function getRules(): Promise<Rule[]> {
+   return request<Rule[]>('/me/availability/rules');
+}
+export async function createRule(data: Omit<Rule, 'id'>): Promise<Rule> {
+   return request<Rule>('/me/availability/rules', { method: 'POST', body: JSON.stringify(data) });
+}
+export async function deleteRule(id: number): Promise<void> {
+   await request(`/me/availability/rules/${id}`, { method: 'DELETE' });
+}
+
+export async function getExceptions(): Promise<Exception[]> {
+   return request<Exception[]>('/me/availability/exceptions');
+}
+export async function createException(data: Omit<Exception, 'id'>): Promise<Exception> {
+   return request<Exception>('/me/availability/exceptions', { method: 'POST', body: JSON.stringify(data) });
+}
+export async function deleteException(id: number): Promise<void> {
+   await request(`/me/availability/exceptions/${id}`, { method: 'DELETE' });
+}
+
+// ─── API PÚBLICA (PACIENTES) ──────────────────────────────────────────────────
+export type PublicDoctor = { nombres: string; apellidos: string; specialty: string; address: string; bio: string; picture: string; price: string };
+export type PublicSlot = { date: string; slots: string[] };
+
+export async function getPublicDoctor(slug: string): Promise<PublicDoctor> {
+   const res = await fetch(`${BASE_URL}/public/doctors/${slug}`);
+   if(!res.ok) throw new Error("Doctor no encontrado");
+   return res.json();
+}
+
+export async function getPublicSlots(slug: string, dateFrom: string, dateTo: string): Promise<PublicSlot[]> {
+   const res = await fetch(`${BASE_URL}/public/doctors/${slug}/availability?from=${dateFrom}&to=${dateTo}`);
+   if(!res.ok) throw new Error("Error obteniendo turnos");
+   return res.json();
+}
+
+export type ReservationData = {
+   nombres: string; apellidos: string; dni: string; email: string; telefono: string; date: string; time: string;
+};
+
+export async function createReservation(slug: string, data: ReservationData): Promise<{init_point: string}> {
+   const res = await fetch(`${BASE_URL}/public/doctors/${slug}/reservations`, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify(data)
+   });
+   
+   if(!res.ok) {
+       const err = await res.json().catch(()=>({}));
+       throw new Error(err.error || "Error creando reserva");
+   }
+   return res.json();
+}

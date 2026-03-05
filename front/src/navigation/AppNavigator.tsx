@@ -12,6 +12,10 @@ import NuevoTurnoScreen from '../screens/NuevoTurnoScreen';
 import HistorialScreen from '../screens/HistorialScreen';
 import PacienteDetailScreen from '../screens/PacienteDetailScreen';
 import TurnoDetailScreen from '../screens/TurnoDetailScreen';
+import DoctorLandingScreen from '../screens/DoctorLandingScreen'; // Fase 6: Landing Pública Web/App
+import SuperAdminScreen from '../screens/SuperAdminScreen'; // Fase 8: Generador de Landings
+import BookingScreen from '../screens/BookingScreen';
+import AvailabilityScreen from '../screens/AvailabilityScreen';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -51,29 +55,47 @@ export default function AppNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: {
-          backgroundColor: colors.primary,
-        },
+        headerStyle: { backgroundColor: colors.primary },
         headerTintColor: colors.textLight,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
+        headerTitleStyle: { fontWeight: 'bold' },
       }}
     >
+      {/* 1. RUTAS PÚBLICAS (Accesibles sin JWT) */}
+      <Stack.Screen 
+        name="RootLanding" 
+        component={DoctorLandingScreen} 
+        options={{ headerShown: false, title: 'Consultorio' }} 
+      />
+      <Stack.Screen 
+        name="SuperAdmin" 
+        component={SuperAdminScreen} 
+        options={{ headerShown: false, title: 'Super Administrador' }} 
+      />
+      <Stack.Screen 
+        name="DoctorLanding" 
+        component={DoctorLandingScreen} 
+        options={{ headerShown: false, title: 'Consultorio' }} 
+      />
+      <Stack.Screen 
+        name="Booking" 
+        component={BookingScreen} 
+        options={{ headerShown: true, title: 'Agendar Turno' }} 
+      />
+      
       {userToken == null ? (
-        // No token found, user isn't signed in
-        <Stack.Screen name="Login" options={{ headerShown: false }}>
+        // 2. RUTAS DE LOGIN (Sin JWT)
+        <Stack.Screen name="Login" options={{ headerShown: false, title: 'Ingreso Doctores' }}>
           {(props) => <LoginScreen {...props} onSignIn={(token: string, user: any) => {
             setUserToken(token);
             setUserData(user);
           }} />}
         </Stack.Screen>
       ) : (
-        // User is signed in
+        // 3. RUTAS PROTEGIDAS (SaaS del Doctor)
         <>
           <Stack.Screen 
             name="Home" 
-            options={{ headerShown: false }} 
+            options={{ headerShown: false, title: 'Dashboard' }} 
           >
             {(props) => <HomeScreen {...props} userName={userData?.nombres || 'Doctor'} onLogout={() => {
               setUserToken(null);

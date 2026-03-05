@@ -1,10 +1,16 @@
 export const colors = {
-  primary: '#c41230', // Rojo sangre vivo (Color principal para headers, botones)
-  background: '#ffffff', // Blanco (Fondo general)
-  surface: '#f5f5f5', // Blanco roto/gris claro para tarjetas o elementos de superficie
-  text: '#121212', // Negro suave para legibilidad general de textos
-  textLight: '#ffffff', // Blanco para texto sobre fondos oscuros (como el primary)
-  border: '#e0e0e0', // Gris para separadores
-  success: '#2e7d32', // Verde para indicadores de éxito
-  error: '#d32f2f', // Rojo estándar para errores
+  primary: '#c41230', // Rojo sangre vivo
+  accent: '#1890ff',  // Azul moderno para botones de acción web
+  background: '#ffffff',
+  surface: '#f5f5f5',
+  text: '#121212',
+  textLight: '#ffffff',
+  border: '#e0e0e0',
+  success: '#2e7d32',
+  error: '#d32f2f',
+  danger: '#ff4d4f', // Rojo alerta para borrar botones
+  gray100: '#f8f9fa',
+  gray200: '#e9ecef',
+  gray300: '#adb5bd',
+  gray400: '#6c757d',
 };
