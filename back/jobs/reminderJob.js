@@ -1,8 +1,6 @@
 const cron = require('node-cron');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../prisma/client');
 const { sendPushNotifications } = require('../services/notificationService');
-
-const prisma = new PrismaClient();
 
 const startReminderJob = () => {
   // 1. CRON EXPIRACIÓN DE SEÑAS PENDIENTES (Ejecutar cada 5 minutos)

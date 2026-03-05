@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma/client');
 const { Preference, MercadoPagoConfig, Payment } = require('mercadopago');
 const AvailabilityService = require('../services/availabilityService');
 const dayjs = require('dayjs');

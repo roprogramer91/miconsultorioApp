@@ -1,8 +1,6 @@
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = require('../prisma/client');
 // El client ID de Android y Web pueden ser diferentes dependiendo de la config de Google Cloud.
 // En react-native-google-signin, usualmente se usa el WEB_CLIENT_ID para autenticar o el ANDROID_CLIENT_ID.
 const client = new OAuth2Client(process.env.GOOGLE_WEB_CLIENT_ID); 

@@ -17,6 +17,7 @@
     "cors": "^2.8.6",
     "dayjs": "^1.11.19",
     "dotenv": "^17.2.1",
+    "ejs": "^4.0.1",
     "expo-server-sdk": "^6.0.0",
     "express": "^5.1.0",
     "google-auth-library": "^10.6.1",

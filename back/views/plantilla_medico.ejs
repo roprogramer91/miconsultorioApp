@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dra. Adriana Noguera - Especialista en Cardiología, Diabetología y Medicina Clínica. Reserve su turno online.">
+    <meta name="keywords" content="cardiología, diabetología, medicina clínica, doctora, turnos médicos">
+    <title>Dr/a. <%= doctor.nombres %> <%= doctor.apellidos %> - <%= doctor.specialty || 'Turnos' %></title>
+    <link rel="stylesheet" href="/css/plantilla_styles.css">
+    <style>
+        :root {
+            --primary-color: <%= config.primaryColor || '#b00000' %>;
+            --primary-light: <%= config.primaryColor || '#b00000' %>;
+            --primary-dark: <%= config.primaryColor || '#b00000' %>;
+            --secondary-color: <%= config.primaryColor || '#b00000' %>;
+            --background: <%= config.backgroundColor || '#f5f5f5' %>;
+            --gradient-primary: linear-gradient(135deg, <%= config.primaryColor || '#b00000' %> 0%, <%= config.primaryColor || '#b00000' %> 100%);
+            --gradient-hero: linear-gradient(135deg, <%= config.primaryColor || '#b00000' %>e6 0%, <%= config.primaryColor || '#b00000' %>f2 100%);
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <i data-feather="heart" class="logo-icon"></i>
+                <span class="logo-text">Dr/a. <%= doctor.apellidos %></span>
+            </div>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#inicio" class="nav-link">Inicio</a></li>
+                <li><a href="#especialidades" class="nav-link">Especialidades</a></li>
+                <li><a href="#obras-sociales" class="nav-link">Obras Sociales</a></li>
+                <li><a href="#contacto" class="nav-link">Contacto</a></li>
+            </ul>
+            <a href="/reservar/<%= doctor.slug %>" class="btn btn-primary btn-nav" target="_top">Reservar Turno</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="inicio">
+        <div class="hero-background"></div>
+        <div class="container hero-container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <i data-feather="award"></i>
+                    <span>Atención Profesional de Calidad</span>
+                </div>
+                <h1 class="hero-title">
+                    Dr/a. <%= doctor.nombres %> <%= doctor.apellidos %>
+                </h1>
+                <p class="hero-subtitle">
+                    <%= doctor.specialty || 'Atención integral orientada a la excelencia.' %>
+                </p>
+                <p class="hero-description">
+                    <%= doctor.bio || 'Brindando atención médica integral con calidez humana y excelencia profesional. Su salud en manos expertas.' %>
+                </p>
+                <div class="hero-cta">
+                    <a href="/reservar/<%= doctor.slug %>" class="btn btn-primary btn-large" target="_top">
+                        <i data-feather="calendar"></i> Reservar Turno
+                    </a>
+                    <a href="#especialidades" class="btn btn-secondary btn-large">
+                        Conocer Más
+                    </a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="hero-card">
+                    <div class="card-glow"></div>
+                    <img src="<%= config.avatarUrl || 'https://via.placeholder.com/350' %>" alt="Dr/a. <%= doctor.apellidos %>" class="doctor-image">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Especialidades Section -->
+    <section class="especialidades" id="especialidades">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Áreas de Especialización</span>
+                <h2 class="section-title">Especialidades Médicas</h2>
+                <p class="section-description">
+                    Atención integral en múltiples especialidades para cuidar su salud de manera completa
+                </p>
+            </div>
+            
+            <div class="especialidades-grid">
+                <% if(config.especialidades && config.especialidades.length > 0) { %>
+                    <% config.especialidades.forEach(function(esp) { %>
+                        <div class="especialidad-card">
+                            <div class="especialidad-icon"><i data-feather="heart"></i></div>
+                            <h3><%= esp.titulo %></h3>
+                            <p><%= esp.descripcion %></p>
+                            <% if(esp.items && esp.items.length > 0) { %>
+                                <ul class="especialidad-list">
+                                    <% esp.items.forEach(function(item) { %>
+                                        <li><%= item %></li>
+                                    <% }); %>
+                                </ul>
+                            <% } %>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <p style="text-align:center; color: var(--gray); grid-column: 1 / -1;">No hay especialidades cargadas aún.</p>
+                <% } %>
+            </div>
+        </div>
+    </section>
+
+    <!-- Obras Sociales Section -->
+    <section class="obras-sociales" id="obras-sociales">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Cobertura Médica</span>
+                <h2 class="section-title">Obras Sociales Atendidas</h2>
+                <p class="section-description">
+                    Trabajamos con las principales obras sociales y prepagas del país
+                </p>
+            </div>
+
+            <div class="obras-sociales-container">
+                <div class="obras-sociales-card">
+                    <div class="obras-grid">
+                        <% if(config.obrasSociales && config.obrasSociales.length > 0) { %>
+                            <% config.obrasSociales.forEach(function(obra) { %>
+                                <div class="obra-item">
+                                    <i data-feather="check" class="obra-check"></i>
+                                    <span><%= obra %></span>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="obra-item">
+                                <i data-feather="check" class="obra-check"></i>
+                                <span>Atención Particular</span>
+                            </div>
+                        <% } %>
+                    </div>
+                    
+                    <div class="obras-note">
+                        <p><i data-feather="message-circle"></i> ¿No encuentra su obra social? Consulte disponibilidad vía WhatsApp</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contacto/CTA Section -->
+    <section class="contacto" id="contacto">
+        <div class="container">
+            <div class="contacto-card">
+                <div class="contacto-content">
+                    <span class="section-badge">Agende su Consulta</span>
+                    <h2>Reserve su Turno Online</h2>
+                    <p>
+                        Complete el formulario de reserva, elija el horario disponible y realize el pago de la seña.
+                        Confirmación inmediata y atención personalizada.
+                    </p>
+
+                    <a href="/reservar/<%= doctor.slug %>" class="btn btn-primary btn-large" target="_top" style="display:inline-flex; align-items:center; gap:10px; margin-bottom: 15px;">
+                        <i data-feather="calendar"></i>
+                        <span>Reservar Turno Online</span>
+                    </a>
+                    
+                    <div class="contacto-info">
+                        <% if(doctor.address) { %>
+                        <div class="info-item">
+                            <i data-feather="map-pin" class="info-icon"></i>
+                            <div>
+                                <strong>Consultorio Presencial</strong>
+                                <p><%= doctor.address %></p>
+                            </div>
+                            <a href="https://www.google.com/maps/search/?api=1&query=<%= encodeURIComponent(doctor.address) %>" 
+                               target="_blank" 
+                               class="btn btn-secondary" 
+                               style="margin-left: auto; padding: 8px 16px; font-size: 13px; display:inline-flex; align-items:center; gap:6px;">
+                                <i data-feather="navigation"></i> Ver en Maps
+                            </a>
+                        </div>
+                        <% } %>
+                        <div class="info-item">
+                            <i data-feather="clock" class="info-icon"></i>
+                            <div>
+                                <strong>Horarios de Atención</strong>
+                                <p>Lunes a Viernes: 9:00 - 18:00hs</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <i data-feather="heart" class="logo-icon"></i>
+                        <span class="logo-text">Dr/a. <%= doctor.apellidos %></span>
+                    </div>
+                    <p><%= doctor.specialty || 'Atención integral y personalizada.' %></p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-col">
+                        <h4>Especialidades</h4>
+                        <ul>
+                            <% if(config.especialidades && config.especialidades.length > 0) { %>
+                                <% config.especialidades.slice(0, 4).forEach(function(esp) { %>
+                                    <li><%= esp.titulo %></li>
+                                <% }); %>
+                            <% } else { %>
+                                <% if(doctor.specialty) { %>
+                                    <li><%= doctor.specialty %></li>
+                                <% } %>
+                                <li>Atención General</li>
+                            <% } %>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Reservas</h4>
+                        <ul>
+                            <li><a href="/reservar/<%= doctor.slug %>" target="_top" style="color:#94a3b8; text-decoration:none;">Reservar Turno Online</a></li>
+                            <li>Turnos Disponibles</li>
+                            <li>Consultas Médicas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <p style="margin:0;">&copy; <%= new Date().getFullYear() %> Dr/a. <%= doctor.nombres %> <%= doctor.apellidos %>. Todos los derechos reservados.</p>
+                <a href="<%= appWebUrl %>/login" 
+                   target="_top"
+                   style="color:#475569; font-size:11px; font-weight:700; letter-spacing:2px; text-decoration:none; text-transform:uppercase; opacity:0.7; transition: opacity 0.2s;"
+                   onmouseover="this.style.opacity='1'"
+                   onmouseout="this.style.opacity='0.7'">
+                    🔒 Acceso Médico
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollToTop" class="scroll-to-top" aria-label="Volver al inicio">
+        <i data-feather="arrow-up"></i>
+    </button>
+
+    <script src="/js/plantilla_script.js"></script>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>
