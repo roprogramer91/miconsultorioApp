@@ -11,8 +11,13 @@ const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN 
 exports.getDoctorProfile = async (req, res) => {
   try {
     const { slug } = req.params;
-    const doctor = await prisma.usuario.findUnique({
-      where: { slug },
+    const { admin } = req.query; // Poner a true desde el SuperAdmin para saltar chequeo de estado
+    
+    // Convertir slug a insensible a minúsculas
+    const doctor = await prisma.usuario.findFirst({
+      where: { 
+        slug: { equals: slug, mode: 'insensitive' }
+      },
       select: {
         id: true,
         nombres: true,
@@ -31,7 +36,11 @@ exports.getDoctorProfile = async (req, res) => {
     });
 
     if (!doctor) return res.status(404).json({ error: 'Doctor no encontrado.' });
-    if (doctor.estado !== 'ACTIVO') return res.status(403).json({ error: 'La Landing Page del Doctor está inactiva o pendiente de pago.' });
+    
+    // Si no es petición del admin, validar estado de pago
+    if (admin !== 'true' && doctor.estado !== 'ACTIVO') {
+        return res.status(403).json({ error: 'La Landing Page del Doctor está inactiva o requerida de activación por el administrador.' });
+    }
     
     res.json(doctor);
   } catch (error) {
