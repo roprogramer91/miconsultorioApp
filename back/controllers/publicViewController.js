@@ -14,6 +14,7 @@ exports.renderLanding = async (req, res) => {
       },
       select: {
         id: true,
+        slug: true,
         nombres: true,
         apellidos: true,
         picture: true,
