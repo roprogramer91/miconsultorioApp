@@ -27,13 +27,19 @@ exports.updateLandingConfig = async (req, res) => {
       where: { usuario_id: doctor.id },
       create: {
         usuario_id: doctor.id,
-        primaryColor: config.primaryColor || '#00B4D8',
-        backgroundColor: config.backgroundColor || '#F8FBFF',
-        textColor: config.textColor || '#1F2937',
-        heroTitle: config.heroTitle || 'Cuidamos tu salud en tiempos difíciles',
+        primaryColor: config.primaryColor || '#b00000',
+        backgroundColor: config.backgroundColor || '#f5f5f5',
+        textColor: config.textColor || '#333333',
+        heroTitle: config.heroTitle || 'Atención Profesional de Calidad',
         heroSubtitle: config.heroSubtitle || '',
         logoUrl: config.logoUrl || null,
         heroImageUrl: config.heroImageUrl || null,
+        profileImageUrl: config.profileImageUrl || null,
+        whatsappNumber: config.whatsappNumber || null,
+        facebookUrl: config.facebookUrl || null,
+        instagramUrl: config.instagramUrl || null,
+        obrasSociales: config.obrasSociales || [],
+        especialidades: config.especialidades || []
       },
       update: {
         primaryColor: config.primaryColor,
@@ -43,6 +49,12 @@ exports.updateLandingConfig = async (req, res) => {
         heroSubtitle: config.heroSubtitle,
         logoUrl: config.logoUrl,
         heroImageUrl: config.heroImageUrl,
+        profileImageUrl: config.profileImageUrl,
+        whatsappNumber: config.whatsappNumber,
+        facebookUrl: config.facebookUrl,
+        instagramUrl: config.instagramUrl,
+        obrasSociales: config.obrasSociales,
+        especialidades: config.especialidades
       }
     });
 

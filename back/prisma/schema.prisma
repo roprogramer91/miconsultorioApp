@@ -228,7 +228,15 @@ model LandingConfig {
   heroSubtitle String?
   logoUrl      String?
   heroImageUrl String?
-  services     Json?
+  services        Json?
+  
+  // Premium Template Config
+  profileImageUrl String?
+  whatsappNumber  String?
+  facebookUrl     String?
+  instagramUrl    String?
+  obrasSociales   Json?
+  especialidades  Json?
 
   usuario Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
 
