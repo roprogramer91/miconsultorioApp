@@ -11,9 +11,12 @@ const doctorRouter = require('./routers/doctorRoutes');
 
 const router = express.Router();
 
+const adminRouter = require('./routers/adminRoutes');
+
 // Rutas públicas (No requieren JWT)
 router.use('/auth', authRouter);
 router.use('/public', publicRouter); // Landing, Webhooks MP y Reservas de Pacientes
+router.use('/admin', adminRouter); // Protegido internamente por credenciales manuales
 router.use('/notifications', notificationsRouter); // El registro de tokens puede ser temporalmente sin auth, o pasarlo a authMiddleware luego
 
 // Aplicar middleware de autenticación a las rutas protegidas del SaaS Dashboard
