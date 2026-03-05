@@ -7,17 +7,19 @@ import { registerForPushNotificationsAsync } from './src/services/pushNotificati
 
 const prefix = Linking.createURL('/');
 
+const RAILWAY_URL = 'https://miconsultorioapp-production.up.railway.app';
+
 const linking = {
   // Maneja deep links móviles y URL webs a la vez
-  prefixes: [prefix, 'miconsultorio://', 'https://tu-dominio.com'],
+  prefixes: [prefix, 'miconsultorio://', RAILWAY_URL],
   config: {
     screens: {
       // Rutas Públicas e Iniciales
       RootLanding: '',
       Login: 'login',
       SuperAdmin: 'superadmin',
-      Booking: 'booking',
-      DoctorLanding: ':slug',
+      Booking: 'booking/:slug',        // ← /booking/cosmefulano → BookingScreen + {slug}
+      DoctorLanding: ':slug',           // ← /cosmefulano → DoctorLanding + {slug}
       
       // Rutas SaaS (Requieren Auth JWT subyacente del Stack)
       Home: 'dashboard',
