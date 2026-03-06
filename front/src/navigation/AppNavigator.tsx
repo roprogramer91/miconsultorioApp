@@ -100,6 +100,16 @@ export default function AppNavigator() {
           <Stack.Screen name="DoctorLanding" component={DoctorLandingScreen} options={{ headerShown: false, title: 'Consultorio' }} />
           <Stack.Screen name="Booking" component={BookingScreen} options={{ headerShown: true, title: 'Agendar Turno' }} />
           <Stack.Screen name="SuperAdmin" component={SuperAdminScreen} options={{ headerShown: false, title: 'Super Administrador' }} />
+
+          {/* Interceptar /login en Web: si el usuario recarga o termina el logueo, redirige suavementre al Home y limpia la URL */}
+          <Stack.Screen name="Login" options={{ headerShown: false }}>
+            {({ navigation }: any) => {
+              useEffect(() => {
+                navigation.replace('Home');
+              }, [navigation]);
+              return null;
+            }}
+          </Stack.Screen>
         </Stack.Group>
       )}
     </Stack.Navigator>
