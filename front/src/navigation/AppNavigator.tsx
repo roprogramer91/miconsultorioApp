@@ -60,48 +60,33 @@ export default function AppNavigator() {
         headerTitleStyle: { fontWeight: 'bold' },
       }}
     >
-      {/* 1. RUTAS PÚBLICAS SIEMPRE DISPONIBLES */}
-      <Stack.Screen 
-        name="RootLanding" 
-        component={DoctorLandingScreen} 
-        options={{ headerShown: false, title: 'Consultorio' }} 
-      />
-      <Stack.Screen 
-        name="SuperAdmin" 
-        component={SuperAdminScreen} 
-        options={{ headerShown: false, title: 'Super Administrador' }} 
-      />
-      <Stack.Screen 
-        name="DoctorLanding" 
-        component={DoctorLandingScreen} 
-        options={{ headerShown: false, title: 'Consultorio' }} 
-      />
-      <Stack.Screen 
-        name="Booking" 
-        component={BookingScreen} 
-        options={{ headerShown: true, title: 'Agendar Turno' }} 
-      />
-
       {userToken == null ? (
-        // 2. RUTA DE INGRESO (si no hay sesión)
-        <Stack.Screen name="Login" options={{ headerShown: false, title: 'Ingreso Doctores' }}>
-          {(props) => <LoginScreen {...props} onSignIn={(token: string, user: any) => {
-            setUserToken(token);
-            setUserData(user);
-          }} />}
-        </Stack.Screen>
-      ) : (
-        // 3. RUTAS PROTEGIDAS (si hay sesión)
+        // 1. USUARIO NO LOGUEADO (El Default es RootLanding)
         <Stack.Group>
-          <Stack.Screen 
-            name="Home" 
-            options={{ headerShown: false, title: 'Dashboard' }} 
-          >
+          <Stack.Screen name="RootLanding" component={DoctorLandingScreen} options={{ headerShown: false, title: 'Consultorio' }} />
+          <Stack.Screen name="DoctorLanding" component={DoctorLandingScreen} options={{ headerShown: false, title: 'Consultorio' }} />
+          <Stack.Screen name="Booking" component={BookingScreen} options={{ headerShown: true, title: 'Agendar Turno' }} />
+          <Stack.Screen name="SuperAdmin" component={SuperAdminScreen} options={{ headerShown: false, title: 'Super Administrador' }} />
+          
+          <Stack.Screen name="Login" options={{ headerShown: false, title: 'Ingreso Doctores' }}>
+            {(props) => <LoginScreen {...props} onSignIn={(token: string, user: any) => {
+              setUserToken(token);
+              setUserData(user);
+            }} />}
+          </Stack.Screen>
+        </Stack.Group>
+      ) : (
+        // 2. USUARIO LOGUEADO (El Default es Home/Dashboard)
+        <Stack.Group>
+          {/* Al loguearse, como esta es la primera, cae acá por defecto */}
+          <Stack.Screen name="Home" options={{ headerShown: false, title: 'Dashboard' }}>
             {(props) => <HomeScreen {...props} userName={userData?.nombres || 'Doctor'} onLogout={() => {
               setUserToken(null);
               setUserData(null);
             }} />}
           </Stack.Screen>
+
+          {/* Rutas Privadas */}
           <Stack.Screen name="Pacientes" component={PacientesScreen} options={{ title: 'Pacientes' }} />
           <Stack.Screen name="Turnos" component={TurnosScreen} options={{ title: 'Turnos' }} />
           <Stack.Screen name="NuevoPaciente" component={NuevoPacienteScreen} options={{ title: 'Nuevo Paciente' }} />
@@ -109,6 +94,12 @@ export default function AppNavigator() {
           <Stack.Screen name="Historial" component={HistorialScreen} options={{ title: 'Historial de Turnos' }} />
           <Stack.Screen name="PacienteDetail" component={PacienteDetailScreen} options={{ title: 'Ficha del Paciente' }} />
           <Stack.Screen name="TurnoDetail" component={TurnoDetailScreen} options={{ headerShown: false }} />
+
+          {/* Rutas Públicas Compartidas (Para que los deep links funcionen aun estando logueado) */}
+          <Stack.Screen name="RootLanding" component={DoctorLandingScreen} options={{ headerShown: false, title: 'Consultorio' }} />
+          <Stack.Screen name="DoctorLanding" component={DoctorLandingScreen} options={{ headerShown: false, title: 'Consultorio' }} />
+          <Stack.Screen name="Booking" component={BookingScreen} options={{ headerShown: true, title: 'Agendar Turno' }} />
+          <Stack.Screen name="SuperAdmin" component={SuperAdminScreen} options={{ headerShown: false, title: 'Super Administrador' }} />
         </Stack.Group>
       )}
     </Stack.Navigator>
