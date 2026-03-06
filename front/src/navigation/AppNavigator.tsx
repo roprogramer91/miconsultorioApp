@@ -115,6 +115,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Historial" component={HistorialScreen} options={{ title: 'Historial de Turnos' }} />
           <Stack.Screen name="PacienteDetail" component={PacienteDetailScreen} options={{ title: 'Ficha del Paciente' }} />
           <Stack.Screen name="TurnoDetail" component={TurnoDetailScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Availability" component={AvailabilityScreen} options={{ title: 'Horarios de Atención' }} />
 
           {/* Rutas Públicas Compartidas (Para que los deep links funcionen aun estando logueado) */}
           <Stack.Screen name="RootLanding" component={DoctorLandingScreen} options={{ headerShown: false, title: 'Consultorio' }} />
