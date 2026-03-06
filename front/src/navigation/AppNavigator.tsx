@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, ActivityIndicator } from 'react-native';
 
@@ -104,10 +105,20 @@ export default function AppNavigator() {
           {/* Interceptar /login en Web: si el usuario recarga o termina el logueo, redirige suavementre al Home y limpia la URL */}
           <Stack.Screen name="Login" options={{ headerShown: false }}>
             {({ navigation }: any) => {
-              useEffect(() => {
-                navigation.replace('Home');
-              }, [navigation]);
-              return null;
+              useFocusEffect(
+                useCallback(() => {
+                  // Pequeño delay para permitir que el router asimile el cambio de Stacks
+                  const timer = setTimeout(() => {
+                    navigation.replace('Home');
+                  }, 100);
+                  return () => clearTimeout(timer);
+                }, [navigation])
+              );
+              return (
+                <View style={{ flex: 1, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}>
+                  <ActivityIndicator size="large" color="#fff" />
+                </View>
+              );
             }}
           </Stack.Screen>
         </Stack.Group>
