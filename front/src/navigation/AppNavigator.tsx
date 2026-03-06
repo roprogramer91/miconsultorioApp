@@ -19,6 +19,26 @@ import BookingScreen from '../screens/BookingScreen';
 import AvailabilityScreen from '../screens/AvailabilityScreen';
 import { colors } from '../theme/colors';
 
+// COMPONENTE INTERCEPTOR PARA WEB: Protege la ruta /login 
+// Cuando el usuario recarga /login pero ya tiene token, el Stack protegido lo monta.
+// Redirige silenciosamente a Home para limpiar la URL del navegador.
+function LoginInterceptor({ navigation }: any) {
+  useFocusEffect(
+    useCallback(() => {
+      const timer = setTimeout(() => {
+        navigation.replace('Home');
+      }, 100);
+      return () => clearTimeout(timer);
+    }, [navigation])
+  );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color="#fff" />
+    </View>
+  );
+}
+
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
@@ -103,24 +123,7 @@ export default function AppNavigator() {
           <Stack.Screen name="SuperAdmin" component={SuperAdminScreen} options={{ headerShown: false, title: 'Super Administrador' }} />
 
           {/* Interceptar /login en Web: si el usuario recarga o termina el logueo, redirige suavementre al Home y limpia la URL */}
-          <Stack.Screen name="Login" options={{ headerShown: false }}>
-            {({ navigation }: any) => {
-              useFocusEffect(
-                useCallback(() => {
-                  // Pequeño delay para permitir que el router asimile el cambio de Stacks
-                  const timer = setTimeout(() => {
-                    navigation.replace('Home');
-                  }, 100);
-                  return () => clearTimeout(timer);
-                }, [navigation])
-              );
-              return (
-                <View style={{ flex: 1, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}>
-                  <ActivityIndicator size="large" color="#fff" />
-                </View>
-              );
-            }}
-          </Stack.Screen>
+          <Stack.Screen name="Login" component={LoginInterceptor} options={{ headerShown: false }} />
         </Stack.Group>
       )}
     </Stack.Navigator>
