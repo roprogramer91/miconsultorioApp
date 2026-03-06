@@ -60,41 +60,39 @@ export default function AppNavigator() {
         headerTitleStyle: { fontWeight: 'bold' },
       }}
     >
+      {/* 1. RUTAS PÚBLICAS SIEMPRE DISPONIBLES */}
+      <Stack.Screen 
+        name="RootLanding" 
+        component={DoctorLandingScreen} 
+        options={{ headerShown: false, title: 'Consultorio' }} 
+      />
+      <Stack.Screen 
+        name="SuperAdmin" 
+        component={SuperAdminScreen} 
+        options={{ headerShown: false, title: 'Super Administrador' }} 
+      />
+      <Stack.Screen 
+        name="DoctorLanding" 
+        component={DoctorLandingScreen} 
+        options={{ headerShown: false, title: 'Consultorio' }} 
+      />
+      <Stack.Screen 
+        name="Booking" 
+        component={BookingScreen} 
+        options={{ headerShown: true, title: 'Agendar Turno' }} 
+      />
+
       {userToken == null ? (
-        // 1. RUTAS PÚBLICAS Y LOGIN (Sin JWT)
-        <Stack.Group>
-          {/* La primera pantalla de este grupo es la que carga por defecto cuando no hay sesión */}
-          <Stack.Screen 
-            name="RootLanding" 
-            component={DoctorLandingScreen} 
-            options={{ headerShown: false, title: 'Consultorio' }} 
-          />
-          <Stack.Screen 
-            name="SuperAdmin" 
-            component={SuperAdminScreen} 
-            options={{ headerShown: false, title: 'Super Administrador' }} 
-          />
-          <Stack.Screen 
-            name="DoctorLanding" 
-            component={DoctorLandingScreen} 
-            options={{ headerShown: false, title: 'Consultorio' }} 
-          />
-          <Stack.Screen 
-            name="Booking" 
-            component={BookingScreen} 
-            options={{ headerShown: true, title: 'Agendar Turno' }} 
-          />
-          <Stack.Screen name="Login" options={{ headerShown: false, title: 'Ingreso Doctores' }}>
-            {(props) => <LoginScreen {...props} onSignIn={(token: string, user: any) => {
-              setUserToken(token);
-              setUserData(user);
-            }} />}
-          </Stack.Screen>
-        </Stack.Group>
+        // 2. RUTA DE INGRESO (si no hay sesión)
+        <Stack.Screen name="Login" options={{ headerShown: false, title: 'Ingreso Doctores' }}>
+          {(props) => <LoginScreen {...props} onSignIn={(token: string, user: any) => {
+            setUserToken(token);
+            setUserData(user);
+          }} />}
+        </Stack.Screen>
       ) : (
-        // 2. RUTAS PROTEGIDAS (SaaS del Doctor)
+        // 3. RUTAS PROTEGIDAS (si hay sesión)
         <Stack.Group>
-          {/* Al entrar al modo logueado, Home es la primera y se carga por defecto */}
           <Stack.Screen 
             name="Home" 
             options={{ headerShown: false, title: 'Dashboard' }} 
@@ -104,59 +102,16 @@ export default function AppNavigator() {
               setUserData(null);
             }} />}
           </Stack.Screen>
-          <Stack.Screen 
-            name="Pacientes" 
-            component={PacientesScreen} 
-            options={{ title: 'Pacientes' }} 
-          />
-          <Stack.Screen 
-            name="Turnos" 
-            component={TurnosScreen} 
-            options={{ title: 'Turnos' }} 
-          />
-          <Stack.Screen 
-            name="NuevoPaciente" 
-            component={NuevoPacienteScreen} 
-            options={{ title: 'Nuevo Paciente' }} 
-          />
-          <Stack.Screen 
-            name="NuevoTurno" 
-            component={NuevoTurnoScreen} 
-            options={{ title: 'Nuevo Turno' }} 
-          />
-          <Stack.Screen 
-            name="Historial" 
-            component={HistorialScreen} 
-            options={{ title: 'Historial de Turnos' }} 
-          />
-          <Stack.Screen 
-            name="PacienteDetail" 
-            component={PacienteDetailScreen} 
-            options={{ title: 'Ficha del Paciente' }} 
-          />
-          <Stack.Screen 
-            name="TurnoDetail" 
-            component={TurnoDetailScreen} 
-            options={{ headerShown: false }} 
-          />
-          {/* Permitir ver la landing y reservar incluso estando logueado, pero debajo del flujo principal */}
-          <Stack.Screen 
-            name="RootLandingLogueado" 
-            component={DoctorLandingScreen} 
-            options={{ headerShown: false, title: 'Consultorio' }} 
-          />
-          <Stack.Screen 
-            name="DoctorLandingLogueado" 
-            component={DoctorLandingScreen} 
-            options={{ headerShown: false, title: 'Consultorio' }} 
-          />
-          <Stack.Screen 
-            name="BookingLogueado" 
-            component={BookingScreen} 
-            options={{ headerShown: true, title: 'Agendar Turno' }} 
-          />
+          <Stack.Screen name="Pacientes" component={PacientesScreen} options={{ title: 'Pacientes' }} />
+          <Stack.Screen name="Turnos" component={TurnosScreen} options={{ title: 'Turnos' }} />
+          <Stack.Screen name="NuevoPaciente" component={NuevoPacienteScreen} options={{ title: 'Nuevo Paciente' }} />
+          <Stack.Screen name="NuevoTurno" component={NuevoTurnoScreen} options={{ title: 'Nuevo Turno' }} />
+          <Stack.Screen name="Historial" component={HistorialScreen} options={{ title: 'Historial de Turnos' }} />
+          <Stack.Screen name="PacienteDetail" component={PacienteDetailScreen} options={{ title: 'Ficha del Paciente' }} />
+          <Stack.Screen name="TurnoDetail" component={TurnoDetailScreen} options={{ headerShown: false }} />
         </Stack.Group>
       )}
     </Stack.Navigator>
   );
 }
+
