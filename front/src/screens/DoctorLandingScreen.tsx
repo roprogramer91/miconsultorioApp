@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Platform, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
 
 // URL base del backend (Railway en prod, localhost en dev)
@@ -31,6 +32,19 @@ export default function DoctorLandingScreen() {
     navigation.navigate('Booking', { slug });
   };
 
+  const handleAccesoMedico = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (token) {
+        navigation.navigate('Home' as never);
+      } else {
+        navigation.navigate('Login' as never);
+      }
+    } catch {
+      navigation.navigate('Login' as never);
+    }
+  };
+
   // WEB: iframe con el EJS de Railway + botones nativos de Expo superpuestos
   if (Platform.OS === 'web') {
       return (
@@ -48,7 +62,7 @@ export default function DoctorLandingScreen() {
                 <Text style={styles.fabText}>Reservar Turno</Text>
             </TouchableOpacity>
             {/* Link Acceso Médico — esquina inferior derecha */}
-            <TouchableOpacity style={styles.accesoBtn} onPress={() => navigation.navigate('Login' as never)}>
+            <TouchableOpacity style={styles.accesoBtn} onPress={handleAccesoMedico}>
                 <Ionicons name="lock-closed-outline" size={14} color="#6B7280" />
                 <Text style={styles.accesoText}>Acceso Médico</Text>
             </TouchableOpacity>
@@ -71,7 +85,7 @@ export default function DoctorLandingScreen() {
                 <Text style={styles.reservarText}>Reservar Turno</Text>
             </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.accesoBtn} onPress={() => navigation.navigate('Login' as never)}>
+        <TouchableOpacity style={styles.accesoBtn} onPress={handleAccesoMedico}>
             <Ionicons name="lock-closed-outline" size={14} color="#6B7280" />
             <Text style={styles.accesoText}>Acceso Médico</Text>
         </TouchableOpacity>
