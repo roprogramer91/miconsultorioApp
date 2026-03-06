@@ -14,18 +14,22 @@ const linking = {
   prefixes: [prefix, 'miconsultorio://', RAILWAY_URL],
   config: {
     screens: {
-      // Rutas Públicas e Iniciales
+      // 1. Rutas Públicas (Stack no logueado)
       RootLanding: '',
       Login: 'login',
       SuperAdmin: 'superadmin',
-      Booking: 'booking/:slug',        // ← /booking/cosmefulano → BookingScreen + {slug}
-      DoctorLanding: ':slug',           // ← /cosmefulano → DoctorLanding + {slug}
+      Booking: 'booking/:slug',        
+      DoctorLanding: ':slug',           
       
-      // Rutas SaaS (Requieren Auth JWT subyacente del Stack)
+      // 2. Rutas Protegidas (Stack logueado)
       Home: 'dashboard',
       Turnos: 'turnos',
       PacienteDetail: 'paciente/:id', 
       TurnoDetail: 'turno/:id',
+      // Permiten deep linking a las públicas incluso estando logueado
+      RootLandingLogueado: '',
+      BookingLogueado: 'booking/:slug',
+      DoctorLandingLogueado: ':slug',
     },
   },
   async getInitialURL() {
